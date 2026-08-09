@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import Dashboard from "./components/Dashboard";
+import Login from "./components/Login";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 function App() {
@@ -11,7 +12,7 @@ function App() {
   // Page States
   const [showForm, setShowForm] = useState(false);
   const [showLeads, setShowLeads] = useState(false);
-
+const [loggedInUser, setLoggedInUser] = useState(null);
   // Lead List
   const [leads, setLeads] = useState([]);
 
@@ -187,13 +188,29 @@ const currentLeads = filteredLeads.slice(
   indexOfFirstLead,
   indexOfLastLead
 );
+
+if (!loggedInUser) {
+    return (
+      <Login onLogin={(user) => setLoggedInUser(user)} />
+    );
+  }
+
   return (
+    
   <div className="container mt-4">
 
     <h2 className="text-center text-primary mb-4">
       🏠 Real Estate Lead Manager
     </h2>
 
+<div className="text-end mb-3">
+  <button
+    className="btn btn-outline-danger"
+    onClick={() => setLoggedInUser(null)}
+  >
+    🚪 Logout
+  </button>
+</div>
   {!showForm && !showLeads && (
   <Dashboard
     totalLeads={totalLeads}
