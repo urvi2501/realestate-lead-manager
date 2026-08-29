@@ -21,7 +21,32 @@ function Login({ onLogin }) {
         }
       );
 
-      onLogin(response.data);
+//        console.log("JWT RESPONSE:", response.data);
+// localStorage.getItem("JWT Token");
+//   localStorage.setItem("jwtToken", response.data);
+const token =
+  typeof response.data === "string"
+    ? response.data
+    : response.data.token;
+
+console.log("JWT RESPONSE:", response.data);
+
+if (!token) {
+  throw new Error("JWT token not received from server");
+}
+
+localStorage.setItem("token", token);
+
+console.log(
+  "JWT SAVED:",
+  localStorage.getItem("token")
+);
+
+onLogin(token);
+
+ 
+
+
 
     } catch (error) {
 
