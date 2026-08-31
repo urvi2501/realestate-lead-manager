@@ -549,7 +549,7 @@ const handleViewEmail = () => {
       onClick={goToDashboard}
       style={{ fontSize: "1.25rem" }}
     >
-      🏠 Real Estate Lead Manager
+      🏠  PrimeNest Realty
     </button>
 
     {/* Right Side */}

@@ -150,7 +150,7 @@ function Reports({ onBack }) {
   let y = 20;
 
   doc.setFontSize(18);
-  doc.text("Real Estate Lead Manager Report", 20, y);
+  doc.text(" PrimeNest Realty Report", 20, y);
 
   y += 15;
 
@@ -354,7 +354,7 @@ const exportExcel = () => {
           </h3>
 
           <p className="text-muted mb-0">
-            Real Estate Lead Manager Reports
+            PrimeNest Realty Reports
           </p>
 
         </div>

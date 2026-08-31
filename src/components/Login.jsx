@@ -67,7 +67,7 @@ onLogin(token);
             <div className="card-body p-4">
 
               <h2 className="text-center text-primary mb-4">
-                🏠 Real Estate Lead Manager
+                🏠  PrimeNest Realty
               </h2>
 
               <h4 className="text-center mb-4">

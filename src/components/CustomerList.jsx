@@ -259,9 +259,6 @@ function CustomerList({
   </select>
 
 </div>
-```
-
-
 
             {/* CLEAR */}
             <div className="col-md-1 d-flex align-items-end">
