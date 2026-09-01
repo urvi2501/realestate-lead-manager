@@ -121,17 +121,24 @@ function App() {
 
       setTotalLeads(data.length);
 
-      setNewLeads(
-        data.filter((item) => item.status === "New").length
-      );
+     setNewLeads(
+  data.filter(
+    (item) => item.status?.toUpperCase() === "NEW"
+  ).length
+);
 
-      setInterestedLeads(
-        data.filter((item) => item.status === "Interested").length
-      );
+setInterestedLeads(
+  data.filter(
+    (item) => item.status?.toUpperCase() === "INTERESTED"
+  ).length
+);
 
-      setConvertedLeads(
-        data.filter((item) => item.status === "Converted").length
-      );
+setConvertedLeads(
+  data.filter(
+    (item) => item.status?.toUpperCase() === "CONVERTED"
+  ).length
+);
+
 
     } catch (error) {
       console.error("Dashboard API Error:", error);
