@@ -14,7 +14,7 @@ function Login({ onLogin }) {
     try {
 
       const response = await axios.post(
-        "//https://realestate-lead-manager-backend-production.up.railway.app/api/auth/login",
+        "https://realestate-lead-manager-backend-production.up.railway.app/api/auth/login",
         {
           email: email,
           password: password

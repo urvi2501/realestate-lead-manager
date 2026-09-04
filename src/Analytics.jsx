@@ -53,37 +53,37 @@ function Analytics({ onBack }) {
       ] = await Promise.all([
 
         axios.get(
-          "http://https://realestate-lead-manager-backend-production.up.railway.app/api/analytics/overview",
+          "https://realestate-lead-manager-backend-production.up.railway.app/api/analytics/overview",
           config
         ),
 
         axios.get(
-          "http://https://realestate-lead-manager-backend-production.up.railway.app/api/analytics/status",
+          "https://realestate-lead-manager-backend-production.up.railway.app/api/analytics/status",
           config
         ),
 
         axios.get(
-          "http://https://realestate-lead-manager-backend-production.up.railway.app/api/analytics/property-type",
+          "https://realestate-lead-manager-backend-production.up.railway.app/api/analytics/property-type",
           config
         ),
 
         axios.get(
-          "http://https://realestate-lead-manager-backend-production.up.railway.app/api/analytics/source",
+          "https://realestate-lead-manager-backend-production.up.railway.app/api/analytics/source",
           config
         ),
 
         axios.get(
-          "http://https://realestate-lead-manager-backend-production.up.railway.app/api/analytics/budget",
+          "https://realestate-lead-manager-backend-production.up.railway.app/api/analytics/budget",
           config
         ),
 
         axios.get(
-          "http://https://realestate-lead-manager-backend-production.up.railway.app/api/analytics/conversion-rate",
+          "https://realestate-lead-manager-backend-production.up.railway.app/api/analytics/conversion-rate",
           config
         ),
 
         axios.get(
-          "http://https://realestate-lead-manager-backend-production.up.railway.app/api/analytics/follow-ups",
+          "https://realestate-lead-manager-backend-production.up.railway.app/api/analytics/follow-ups",
           config
         )
 

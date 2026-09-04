@@ -50,52 +50,52 @@ function Reports({ onBack }) {
       ] = await Promise.all([
 
         axios.get(
-          "http://https://realestate-lead-manager-backend-production.up.railway.app/api/reports",
+          "https://realestate-lead-manager-backend-production.up.railway.app/api/reports",
           config
         ),
 
         axios.get(
-          "http://https://realestate-lead-manager-backend-production.up.railway.app/api/reports/status",
+          "https://realestate-lead-manager-backend-production.up.railway.app/api/reports/status",
           config
         ),
 
         axios.get(
-          "http://https://realestate-lead-manager-backend-production.up.railway.app/api/reports/source",
+          "https://realestate-lead-manager-backend-production.up.railway.app/api/reports/source",
           config
         ),
 
         axios.get(
-          "http://https://realestate-lead-manager-backend-production.up.railway.app/api/reports/property-type",
+          "https://realestate-lead-manager-backend-production.up.railway.app/api/reports/property-type",
           config
         ),
 
         axios.get(
-          "http://https://realestate-lead-manager-backend-production.up.railway.app/api/reports/location",
+          "https://realestate-lead-manager-backend-production.up.railway.app/api/reports/location",
           config
         ),
 
         axios.get(
-          "http://https://realestate-lead-manager-backend-production.up.railway.app/api/reports/budget",
+          "https://realestate-lead-manager-backend-production.up.railway.app/api/reports/budget",
           config
         ),
 
         axios.get(
-          "http://https://realestate-lead-manager-backend-production.up.railway.app/api/reports/followup-status",
+          "https://realestate-lead-manager-backend-production.up.railway.app/api/reports/followup-status",
           config
         ),
 
         axios.get(
-          "http://https://realestate-lead-manager-backend-production.up.railway.app/api/reports/followup-date",
+          "https://realestate-lead-manager-backend-production.up.railway.app/api/reports/followup-date",
           config
         ),
 
         axios.get(
-          "http://https://realestate-lead-manager-backend-production.up.railway.app/api/reports/conversion",
+          "https://realestate-lead-manager-backend-production.up.railway.app/api/reports/conversion",
           config
         ),
 
         axios.get(
-          "http://https://realestate-lead-manager-backend-production.up.railway.app/api/reports/customer-status",
+          "https://realestate-lead-manager-backend-production.up.railway.app/api/reports/customer-status",
           config
         )
 

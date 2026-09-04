@@ -19,7 +19,7 @@ function MessageTemplate({ onBack }) {
       const token = localStorage.getItem("token");
 
       const response = await axios.get(
-        "http://https://realestate-lead-manager-backend-production.up.railway.app/api/templates",
+        "https://realestate-lead-manager-backend-production.up.railway.app/api/templates",
         {
           headers: {
             Authorization: `Bearer ${token}`
@@ -92,7 +92,7 @@ console.error("Template API Error:", error);
       if (editingId) {
 
         await axios.put(
-          `http://https://realestate-lead-manager-backend-production.up.railway.app/api/templates/${editingId}`,
+          `https://realestate-lead-manager-backend-production.up.railway.app/api/templates/${editingId}`,
           templateData,
           config
         );
@@ -102,7 +102,7 @@ console.error("Template API Error:", error);
       } else {
 
         await axios.post(
-          "http://https://realestate-lead-manager-backend-production.up.railway.app/api/templates",
+          "https://realestate-lead-manager-backend-production.up.railway.app/api/templates",
           templateData,
           config
         );
@@ -155,7 +155,7 @@ console.error("Template API Error:", error);
       const token = localStorage.getItem("token");
 
       await axios.delete(
-        `http://https://realestate-lead-manager-backend-production.up.railway.app/api/templates/${id}`,
+        `https://realestate-lead-manager-backend-production.up.railway.app/api/templates/${id}`,
         {
           headers: {
             Authorization: `Bearer ${token}`

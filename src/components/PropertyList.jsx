@@ -21,7 +21,7 @@ function PropertyList({ onAddProperty, onEditProperty, goToDashboard }) {
       const token = localStorage.getItem("token");
 
       const response = await axios.get(
-        "http://https://realestate-lead-manager-backend-production.up.railway.app/api/properties",
+        "https://realestate-lead-manager-backend-production.up.railway.app/api/properties",
         {
           headers: {
             Authorization: `Bearer ${token}`
@@ -113,7 +113,7 @@ function PropertyList({ onAddProperty, onEditProperty, goToDashboard }) {
       const token = localStorage.getItem("token");
 
       await axios.delete(
-        `http://https://realestate-lead-manager-backend-production.up.railway.app/api/properties/${id}`,
+        `https://realestate-lead-manager-backend-production.up.railway.app/api/properties/${id}`,
         {
           headers: {
             Authorization: `Bearer ${token}`

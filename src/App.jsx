@@ -329,7 +329,7 @@ setConvertedLeads(
     try {
 
       await axios.post(
-        `http://https://realestate-lead-manager-backend-production.up.railway.app/api/leads/${selectedLead.id}/convert`
+        `https://realestate-lead-manager-backend-production.up.railway.app/api/leads/${selectedLead.id}/convert`
       );
 
       alert("Lead converted to customer successfully!");

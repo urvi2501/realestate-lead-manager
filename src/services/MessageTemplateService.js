@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://https://realestate-lead-manager-backend-production.up.railway.app/api/templates";
+const API_URL = "https://realestate-lead-manager-backend-production.up.railway.app/api/templates";
 
 export const getAllTemplates = async () => {
   const token = localStorage.getItem("token");

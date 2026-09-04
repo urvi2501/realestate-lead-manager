@@ -34,13 +34,13 @@ const recordsPerPage = 5;
 
       // Get follow-ups
       const followUpResponse = await axios.get(
-        "http://https://realestate-lead-manager-backend-production.up.railway.app/api/followups",
+        "https://realestate-lead-manager-backend-production.up.railway.app/api/followups",
         config
       );
 
       // Get leads
       const leadResponse = await axios.get(
-        "http://https://realestate-lead-manager-backend-production.up.railway.app/api/leads",
+        "https://realestate-lead-manager-backend-production.up.railway.app/api/leads",
         config
       );
 

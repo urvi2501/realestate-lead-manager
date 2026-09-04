@@ -66,7 +66,7 @@ const handleSubmit = async (e) => {
     if (selectedProperty) {
 
       response = await axios.put(
-        `http://https://realestate-lead-manager-backend-production.up.railway.app/api/properties/${selectedProperty.id}`,
+        `https://realestate-lead-manager-backend-production.up.railway.app/api/properties/${selectedProperty.id}`,
         property,
         config
       );
@@ -76,7 +76,7 @@ const handleSubmit = async (e) => {
     } else {
 
       response = await axios.post(
-        "http://https://realestate-lead-manager-backend-production.up.railway.app/api/properties",
+        "https://realestate-lead-manager-backend-production.up.railway.app/api/properties",
         property,
         config
       );
