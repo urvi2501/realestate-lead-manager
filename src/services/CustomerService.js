@@ -1,6 +1,7 @@
 import axios from "axios";
+import { API_URL } from "../config";
 
-const API = "http://localhost:8080/api/customers";
+const API = `${API_URL}/api/customers`;
 
 export const getAllCustomers = () => {
   const token = localStorage.getItem("token");

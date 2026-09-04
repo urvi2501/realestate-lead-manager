@@ -1,7 +1,7 @@
 import axios from "axios";
+import { API_URL } from "../config";
 
-const API = "http://localhost:8080/api/leads";
-
+const API = `${API_URL}/api/leads`;
 const authHeader = () => {
   const token = localStorage.getItem("token");
 
@@ -37,4 +37,5 @@ export const deleteLead = (id) =>
 
   export const convertLeadToCustomer = (id) => {
   return axios.post(`${API_URL}/${id}/convert`);
+   headers: authHeader()
 };

@@ -53,37 +53,37 @@ function Analytics({ onBack }) {
       ] = await Promise.all([
 
         axios.get(
-          "http://localhost:8080/api/analytics/overview",
+          "http://https://realestate-lead-manager-backend-production.up.railway.app/api/analytics/overview",
           config
         ),
 
         axios.get(
-          "http://localhost:8080/api/analytics/status",
+          "http://https://realestate-lead-manager-backend-production.up.railway.app/api/analytics/status",
           config
         ),
 
         axios.get(
-          "http://localhost:8080/api/analytics/property-type",
+          "http://https://realestate-lead-manager-backend-production.up.railway.app/api/analytics/property-type",
           config
         ),
 
         axios.get(
-          "http://localhost:8080/api/analytics/source",
+          "http://https://realestate-lead-manager-backend-production.up.railway.app/api/analytics/source",
           config
         ),
 
         axios.get(
-          "http://localhost:8080/api/analytics/budget",
+          "http://https://realestate-lead-manager-backend-production.up.railway.app/api/analytics/budget",
           config
         ),
 
         axios.get(
-          "http://localhost:8080/api/analytics/conversion-rate",
+          "http://https://realestate-lead-manager-backend-production.up.railway.app/api/analytics/conversion-rate",
           config
         ),
 
         axios.get(
-          "http://localhost:8080/api/analytics/follow-ups",
+          "http://https://realestate-lead-manager-backend-production.up.railway.app/api/analytics/follow-ups",
           config
         )
 
@@ -181,6 +181,11 @@ function Analytics({ onBack }) {
       </div>
 
 
+      {/* OVERVIEW */}
+
+      <h5 className="mb-3">
+        📊 Overview
+      </h5>
 
       {/* OVERVIEW */}
 
@@ -284,128 +289,80 @@ function Analytics({ onBack }) {
 
 </div>
 
-{/* CONVERSION */}
 
-<h5 className="mb-3">
-  🎯 Conversion Performance
-</h5>
+      {/* CONVERSION */}
 
-<div className="row mb-4">
+      <h5 className="mb-3">
+        🎯 Conversion
+      </h5>
 
-  {/* CONVERTED LEADS */}
+      <div className="row mb-4">
 
-  <div className="col-md-4 mb-3">
+        <div className="col-md-4 mb-3">
 
-    <div className="card shadow-sm border-0 h-100">
+          <div className="card shadow-sm">
 
-      <div className="card-body text-center">
+            <div className="card-body">
 
-        <div className="fs-1 mb-2">
-          ✅
+              <h6>
+                Converted Leads
+              </h6>
+
+              <h2>
+                {conversion.convertedLeads ?? 0}
+              </h2>
+
+            </div>
+
+          </div>
+
         </div>
 
-        <h6 className="text-muted">
-          Converted Leads
-        </h6>
 
-        <h2 className="fw-bold">
-          {conversion.convertedLeads ?? 0}
-        </h2>
+        <div className="col-md-4 mb-3">
 
-        <p className="text-muted mb-0">
-          Successfully converted
-        </p>
+          <div className="card shadow-sm">
 
-      </div>
+            <div className="card-body">
 
-    </div>
+              <h6>
+                Conversion Rate
+              </h6>
 
-  </div>
+              <h2>
+                {Number(
+                  conversion.conversionRate ?? 0
+                ).toFixed(2)}%
+              </h2>
 
+            </div>
 
-  {/* CONVERSION RATE */}
+          </div>
 
-  <div className="col-md-4 mb-3">
-
-    <div className="card shadow-sm border-0 h-100">
-
-      <div className="card-body text-center">
-
-        <div className="fs-1 mb-2">
-          🎯
         </div>
 
-        <h6 className="text-muted">
-          Conversion Rate
-        </h6>
 
-        <h2 className="fw-bold">
-          {Number(
-            conversion.conversionRate ?? 0
-          ).toFixed(2)}%
-        </h2>
+        <div className="col-md-4 mb-3">
 
-        {/* PROGRESS BAR */}
+          <div className="card shadow-sm">
 
-        <div className="progress mt-3">
+            <div className="card-body">
 
-          <div
-            className="progress-bar"
-            role="progressbar"
-            style={{
-              width: `${Math.min(
-                Number(conversion.conversionRate) || 0,
-                100
-              )}%`
-            }}
-            aria-valuenow={
-              Number(conversion.conversionRate) || 0
-            }
-            aria-valuemin="0"
-            aria-valuemax="100"
-          >
+              <h6>
+                Total Leads
+              </h6>
+
+              <h2>
+                {conversion.totalLeads ?? 0}
+              </h2>
+
+            </div>
+
           </div>
 
         </div>
 
       </div>
-
-    </div>
-
-  </div>
-
-
-  {/* TOTAL LEADS */}
-
-  <div className="col-md-4 mb-3">
-
-    <div className="card shadow-sm border-0 h-100">
-
-      <div className="card-body text-center">
-
-        <div className="fs-1 mb-2">
-          📊
-        </div>
-
-        <h6 className="text-muted">
-          Total Leads
-        </h6>
-
-        <h2 className="fw-bold">
-          {conversion.totalLeads ?? 0}
-        </h2>
-
-        <p className="text-muted mb-0">
-          Leads considered for conversion
-        </p>
-
-      </div>
-
-    </div>
-
-  </div>
-
-</div>
 
 
       {/* LEAD STATUS */}

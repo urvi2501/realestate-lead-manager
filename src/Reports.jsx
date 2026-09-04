@@ -50,52 +50,52 @@ function Reports({ onBack }) {
       ] = await Promise.all([
 
         axios.get(
-          "http://localhost:8080/api/reports",
+          "http://https://realestate-lead-manager-backend-production.up.railway.app/api/reports",
           config
         ),
 
         axios.get(
-          "http://localhost:8080/api/reports/status",
+          "http://https://realestate-lead-manager-backend-production.up.railway.app/api/reports/status",
           config
         ),
 
         axios.get(
-          "http://localhost:8080/api/reports/source",
+          "http://https://realestate-lead-manager-backend-production.up.railway.app/api/reports/source",
           config
         ),
 
         axios.get(
-          "http://localhost:8080/api/reports/property-type",
+          "http://https://realestate-lead-manager-backend-production.up.railway.app/api/reports/property-type",
           config
         ),
 
         axios.get(
-          "http://localhost:8080/api/reports/location",
+          "http://https://realestate-lead-manager-backend-production.up.railway.app/api/reports/location",
           config
         ),
 
         axios.get(
-          "http://localhost:8080/api/reports/budget",
+          "http://https://realestate-lead-manager-backend-production.up.railway.app/api/reports/budget",
           config
         ),
 
         axios.get(
-          "http://localhost:8080/api/reports/followup-status",
+          "http://https://realestate-lead-manager-backend-production.up.railway.app/api/reports/followup-status",
           config
         ),
 
         axios.get(
-          "http://localhost:8080/api/reports/followup-date",
+          "http://https://realestate-lead-manager-backend-production.up.railway.app/api/reports/followup-date",
           config
         ),
 
         axios.get(
-          "http://localhost:8080/api/reports/conversion",
+          "http://https://realestate-lead-manager-backend-production.up.railway.app/api/reports/conversion",
           config
         ),
 
         axios.get(
-          "http://localhost:8080/api/reports/customer-status",
+          "http://https://realestate-lead-manager-backend-production.up.railway.app/api/reports/customer-status",
           config
         )
 

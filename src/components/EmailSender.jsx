@@ -25,7 +25,7 @@ function EmailSender({ onBack }) {
         const token = localStorage.getItem("token");
 
         const response = await axios.get(
-          "http://localhost:8080/api/templates",
+          "http://https://realestate-lead-manager-backend-production.up.railway.app/api/templates",
           {
             headers: {
               Authorization: `Bearer ${token}`
@@ -107,7 +107,7 @@ function EmailSender({ onBack }) {
       const token = localStorage.getItem("token");
 
       await axios.post(
-        "http://localhost:8080/api/email/send",
+        "http://https://realestate-lead-manager-backend-production.up.railway.app/api/email/send",
         null,
         {
           params: {
