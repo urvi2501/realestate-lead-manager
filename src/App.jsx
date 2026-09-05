@@ -21,6 +21,7 @@ import {
   addLead,
   updateLead,
   deleteLead,
+   convertLeadToCustomer,
 } from "./services/LeadService";
 
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -328,9 +329,7 @@ setConvertedLeads(
 
     try {
 
-      await axios.post(
-        `https://realestate-lead-manager-backend-production.up.railway.app/api/leads/${selectedLead.id}/convert`
-      );
+      await convertLeadToCustomer(selectedLead.id);
 
       alert("Lead converted to customer successfully!");
 
