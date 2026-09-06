@@ -35,7 +35,12 @@ export const deleteLead = (id) =>
     headers: authHeader()
   });
 
-  export const convertLeadToCustomer = (id) => {
-  return axios.post(`${API}/${id}/convert`);
-   headers: authHeader()
+ export const convertLeadToCustomer = (id) => {
+  return axios.post(
+    `${API}/${id}/convert`,
+    {},
+    {
+      headers: authHeader()
+    }
+  );
 };
