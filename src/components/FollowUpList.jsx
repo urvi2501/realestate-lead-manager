@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import axios from "axios";
 
@@ -6,11 +7,18 @@ function FollowUpList({ onBack, onEditLead }) {
   const [followUps, setFollowUps] = useState([]);
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
-const [searchTerm, setSearchTerm] = useState("");
-const [filterType, setFilterType] = useState("All");
-const [currentPage, setCurrentPage] = useState(1);
 
-const recordsPerPage = 5;
+  // Search and filter
+  const [search, setSearch] = useState("");
+  const [filterType, setFilterType] = useState("ALL");
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const recordsPerPage = 5;
+
+  const API_URL =
+    "https://realestate-lead-manager-backend-production.up.railway.app";
+
   // =========================================================
   // LOAD FOLLOW-UPS + LEADS
   // =========================================================
@@ -28,21 +36,22 @@ const recordsPerPage = 5;
 
       const config = {
         headers: {
-          Authorization: `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       };
 
-      // Get follow-ups
-      const followUpResponse = await axios.get(
-        "https://realestate-lead-manager-backend-production.up.railway.app/api/followups",
-        config
-      );
+      const [followUpResponse, leadResponse] =
+        await Promise.all([
+          axios.get(
+            `${API_URL}/api/followups`,
+            config
+          ),
 
-      // Get leads
-      const leadResponse = await axios.get(
-        "https://realestate-lead-manager-backend-production.up.railway.app/api/leads",
-        config
-      );
+          axios.get(
+            `${API_URL}/api/leads`,
+            config
+          ),
+        ]);
 
       setFollowUps(followUpResponse.data);
       setLeads(leadResponse.data);
@@ -75,6 +84,76 @@ const recordsPerPage = 5;
     }
   };
 
+  // =========================================================
+  // COMPLETE FOLLOW-UP
+  // =========================================================
+
+  const completeFollowUp = async (id) => {
+
+    if (
+      !window.confirm(
+        "Are you sure you want to mark this follow-up as completed?"
+      )
+    ) {
+      return;
+    }
+
+    try {
+
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+
+        alert(
+          "Session expired. Please login again."
+        );
+
+        return;
+      }
+
+      await axios.put(
+        `${API_URL}/api/followups/${id}/complete`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      await loadFollowUps();
+
+      alert(
+        "Follow-up marked as completed."
+      );
+
+    } catch (error) {
+
+      console.error(
+        "Complete Follow-up Error:",
+        error
+      );
+
+      if (error.response?.status === 403) {
+
+        alert(
+          "Access denied. Please login again."
+        );
+
+      } else {
+
+        alert(
+          "Failed to complete follow-up."
+        );
+
+      }
+
+    }
+  };
+
+  // =========================================================
+  // LOAD DATA
+  // =========================================================
 
   useEffect(() => {
 
@@ -82,33 +161,58 @@ const recordsPerPage = 5;
 
   }, []);
 
-
   // =========================================================
   // COMBINE FOLLOW-UP + LEAD DATA
   // =========================================================
 
- // =========================================================
-// USE LEAD FOLLOW-UP DATES
-// =========================================================
+  const combinedFollowUps = followUps.map(
+    (followUp) => {
 
-const combinedFollowUps = leads
-  .filter((lead) => lead.followUpDate)
-  .map((lead) => ({
-    id: lead.id,
-    leadId: lead.id,
-    name: lead.name,
-    phone: lead.phone,
-    email: lead.email,
-    propertyType: lead.propertyType,
-    budget: lead.budget,
-    location: lead.location,
-    followUpDate: lead.followUpDate,
-    notes: lead.followUpNotes || "-",
-    status: lead.followUpStatus || "PENDING",
-  }));
+      const lead = leads.find(
+        (item) =>
+          item.id === followUp.leadId
+      );
+
+      return {
+
+        id: followUp.id,
+
+        leadId: followUp.leadId,
+
+        name:
+          lead?.name || "-",
+
+        phone:
+          lead?.phone || "-",
+
+        email:
+          lead?.email || "-",
+
+        propertyType:
+          lead?.propertyType || "-",
+
+        budget:
+          lead?.budget || "-",
+
+        location:
+          lead?.location || "-",
+
+        followUpDate:
+          followUp.followUpDate,
+
+        notes:
+          followUp.notes || "-",
+
+        status:
+          followUp.status || "PENDING",
+
+      };
+
+    }
+  );
 
   // =========================================================
-  // FOLLOW-UP CATEGORY
+  // FOLLOW-UP TYPE
   // =========================================================
 
   const getFollowUpType = (date) => {
@@ -137,103 +241,150 @@ const combinedFollowUps = leads
     );
 
     if (followUpDate < today) {
-
       return "Overdue";
-
     }
 
     if (
       followUpDate.getTime() ===
       today.getTime()
     ) {
-
       return "Today";
-
     }
 
     return "Upcoming";
-
   };
 
+  // =========================================================
+  // SEARCH + FILTER
+  // =========================================================
+
+  const filteredFollowUps =
+    combinedFollowUps.filter(
+      (followUp) => {
+
+        const searchText =
+          search.toLowerCase();
+
+        const matchesSearch =
+          (followUp.name || "")
+            .toLowerCase()
+            .includes(searchText) ||
+
+          (followUp.phone || "")
+            .toLowerCase()
+            .includes(searchText);
+
+        const followUpType =
+          getFollowUpType(
+            followUp.followUpDate
+          );
+
+        const matchesFilter =
+          filterType === "ALL" ||
+          followUpType === filterType;
+
+        return (
+          matchesSearch &&
+          matchesFilter
+        );
+
+      }
+    );
 
   // =========================================================
   // SORT
   // =========================================================
 
   const sortedFollowUps =
-    [...combinedFollowUps].sort(
+    [...filteredFollowUps].sort(
       (a, b) =>
         new Date(a.followUpDate) -
         new Date(b.followUpDate)
     );
 
-    // =========================================================
-// SEARCH + FILTER
-// =========================================================
-
-const filteredFollowUps = sortedFollowUps.filter((item) => {
-
-  const search = searchTerm.toLowerCase();
-
-  const matchesSearch =
-    item.name?.toLowerCase().includes(search) ||
-    item.phone?.toLowerCase().includes(search);
-
-  const matchesFilter =
-    filterType === "All" ||
-    getFollowUpType(item.followUpDate) === filterType;
-
-  return matchesSearch && matchesFilter;
-});
-
-
-// =========================================================
-// PAGINATION
-// =========================================================
-
-const totalPages = Math.ceil(
-  filteredFollowUps.length / recordsPerPage
-);
-
-const startIndex =
-  (currentPage - 1) * recordsPerPage;
-
-const paginatedFollowUps =
-  filteredFollowUps.slice(
-    startIndex,
-    startIndex + recordsPerPage
-  );
-
   // =========================================================
-  // COUNTS
+  // PAGINATION
   // =========================================================
 
-  const overdueCount =
-    combinedFollowUps.filter(
-      (item) =>
-        getFollowUpType(
-          item.followUpDate
-        ) === "Overdue"
-    ).length;
+  const totalPages =
+    Math.ceil(
+      sortedFollowUps.length /
+        recordsPerPage
+    );
 
+  const startIndex =
+    (currentPage - 1) *
+    recordsPerPage;
 
-  const todayCount =
-    combinedFollowUps.filter(
-      (item) =>
-        getFollowUpType(
-          item.followUpDate
-        ) === "Today"
-    ).length;
+  const currentFollowUps =
+    sortedFollowUps.slice(
+      startIndex,
+      startIndex + recordsPerPage
+    );
 
+  // =========================================================
+  // SEARCH / FILTER HANDLERS
+  // =========================================================
 
-  const upcomingCount =
-    combinedFollowUps.filter(
-      (item) =>
-        getFollowUpType(
-          item.followUpDate
-        ) === "Upcoming"
-    ).length;
+  const handleSearchChange = (e) => {
 
+    setSearch(
+      e.target.value
+    );
+
+    setCurrentPage(1);
+
+  };
+
+  const handleFilterChange = (e) => {
+
+    setFilterType(
+      e.target.value
+    );
+
+    setCurrentPage(1);
+
+  };
+
+  const clearFilters = () => {
+
+    setSearch("");
+    setFilterType("ALL");
+    setCurrentPage(1);
+
+  };
+
+  // =========================================================
+  // DATE FORMAT
+  // =========================================================
+
+  const formatDate = (date) => {
+
+    if (!date) {
+      return "-";
+    }
+
+    const dateObject =
+      new Date(date);
+
+    if (
+      isNaN(
+        dateObject.getTime()
+      )
+    ) {
+      return date;
+    }
+
+    return dateObject.toLocaleDateString(
+      "en-IN",
+      {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }
+    );
+
+  };
 
   // =========================================================
   // LOADING
@@ -243,20 +394,15 @@ const paginatedFollowUps =
 
     return (
 
-      <div className="container mt-4">
+      <p className="text-center mt-4">
 
-        <p className="text-center">
+        Loading follow-ups...
 
-          Loading follow-ups...
-
-        </p>
-
-      </div>
+      </p>
 
     );
 
   }
-
 
   // =========================================================
   // UI
@@ -266,114 +412,101 @@ const paginatedFollowUps =
 
     <div className="container mt-4">
 
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
 
-      {/* HEADER */}
+      <div className="d-flex justify-content-between align-items-center mb-3">
 
-      <div className="d-flex justify-content-between align-items-center mb-4">
-
-        <div>
-
-          <h3>
-            📅 Follow-up Reminders
-          </h3>
-
-          <p className="text-muted mb-0">
-            Manage your lead follow-ups
-          </p>
-
-        </div>
-
+        <h3>
+          📅 Follow-ups
+        </h3>
 
         <button
           className="btn btn-secondary"
           onClick={onBack}
         >
-
           ← Back to Dashboard
-
         </button>
 
       </div>
 
 
-      {/* SUMMARY CARDS */}
+      {/* =====================================================
+          SEARCH + FILTER
+      ===================================================== */}
 
-      <div className="row mb-4">
+      <div className="card shadow-sm mb-4">
 
+        <div className="card-body">
 
-        {/* OVERDUE */}
+          <div className="row g-3">
 
-        <div className="col-md-4 mb-3">
+            {/* SEARCH */}
 
-          <div className="card shadow-sm border-danger">
+            <div className="col-md-5">
 
-            <div className="card-body">
+              <label className="form-label fw-bold">
+                🔍 Search Lead
+              </label>
 
-              <h6 className="text-danger">
-
-                🔴 Overdue
-
-              </h6>
-
-              <h3>
-
-                {overdueCount}
-
-              </h3>
-
-            </div>
-
-          </div>
-
-        </div>
-
-
-        {/* TODAY */}
-
-        <div className="col-md-4 mb-3">
-
-          <div className="card shadow-sm border-warning">
-
-            <div className="card-body">
-
-              <h6 className="text-warning">
-
-                🟡 Today
-
-              </h6>
-
-              <h3>
-
-                {todayCount}
-
-              </h3>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Search by name or phone"
+                value={search}
+                onChange={handleSearchChange}
+              />
 
             </div>
 
-          </div>
 
-        </div>
+            {/* FOLLOW-UP FILTER */}
+
+            <div className="col-md-5">
+
+              <label className="form-label fw-bold">
+                🎯 Follow-up Type
+              </label>
+
+              <select
+                className="form-select"
+                value={filterType}
+                onChange={handleFilterChange}
+              >
+
+                <option value="ALL">
+                  All Follow-ups
+                </option>
+
+                <option value="Overdue">
+                  🔴 Overdue
+                </option>
+
+                <option value="Today">
+                  🟡 Today
+                </option>
+
+                <option value="Upcoming">
+                  🔵 Upcoming
+                </option>
+
+              </select>
+
+            </div>
 
 
-        {/* UPCOMING */}
+            {/* CLEAR */}
 
-        <div className="col-md-4 mb-3">
+            <div className="col-md-2 d-flex align-items-end">
 
-          <div className="card shadow-sm border-primary">
-
-            <div className="card-body">
-
-              <h6 className="text-primary">
-
-                🔵 Upcoming
-
-              </h6>
-
-              <h3>
-
-                {upcomingCount}
-
-              </h3>
+              <button
+                className="btn btn-outline-secondary w-100"
+                onClick={clearFilters}
+                title="Clear filters"
+              >
+                ✖ Clear
+              </button>
 
             </div>
 
@@ -384,85 +517,48 @@ const paginatedFollowUps =
       </div>
 
 
-{/* =========================================================
-    SEARCH + FILTER
-========================================================= */}
+      {/* =====================================================
+          RESULT COUNT
+      ===================================================== */}
 
-<div className="card shadow-sm mb-4">
-  <div className="card-body">
+      <div className="mb-2">
 
-    <div className="row">
+        <small className="text-muted">
 
-      {/* SEARCH */}
+          Showing{" "}
 
-      <div className="col-md-7 mb-2">
+          {sortedFollowUps.length === 0
+            ? 0
+            : startIndex + 1}
 
-        <label className="form-label fw-bold">
-          🔍 Search Lead
-        </label>
+          {" - "}
 
-        <input
-          type="text"
-          className="form-control"
-          placeholder="Search by lead name or phone..."
-          value={searchTerm}
-          onChange={(e) => {
-            setSearchTerm(e.target.value);
-            setCurrentPage(1);
-          }}
-        />
+          {Math.min(
+            startIndex +
+              recordsPerPage,
+            sortedFollowUps.length
+          )}
 
-      </div>
+          {" of "}
 
+          {sortedFollowUps.length}
 
-      {/* FILTER */}
+          {" follow-ups"}
 
-      <div className="col-md-5 mb-2">
-
-        <label className="form-label fw-bold">
-          🎯 Filter
-        </label>
-
-        <select
-          className="form-select"
-          value={filterType}
-          onChange={(e) => {
-            setFilterType(e.target.value);
-            setCurrentPage(1);
-          }}
-        >
-
-          <option value="All">
-            All Follow-ups
-          </option>
-
-          <option value="Overdue">
-            🔴 Overdue
-          </option>
-
-          <option value="Today">
-            🟡 Today
-          </option>
-
-          <option value="Upcoming">
-            🔵 Upcoming
-          </option>
-
-        </select>
+        </small>
 
       </div>
 
-    </div>
 
-  </div>
-</div>
-      {/* TABLE */}
+      {/* =====================================================
+          TABLE
+      ===================================================== */}
 
-      {filteredFollowUps.length === 0 ? (
+      {sortedFollowUps.length === 0 ? (
 
         <div className="alert alert-info">
 
-          No follow-ups scheduled.
+          No follow-ups found matching your search/filter.
 
         </div>
 
@@ -472,35 +568,23 @@ const paginatedFollowUps =
 
           <table className="table table-bordered table-hover">
 
-
             <thead className="table-dark">
 
               <tr>
-
                 <th>ID</th>
-
                 <th>Lead Name</th>
-
                 <th>Phone</th>
-
                 <th>Property</th>
-
                 <th>Follow-up Date</th>
-
-                <th>Notes</th>
-
                 <th>Status</th>
-
-                <th>Action</th>
-
+                <th>Actions</th>
               </tr>
 
             </thead>
 
-
             <tbody>
 
-              {paginatedFollowUps.map(
+              {currentFollowUps.map(
                 (followUp) => {
 
                   const type =
@@ -508,36 +592,41 @@ const paginatedFollowUps =
                       followUp.followUpDate
                     );
 
-
                   return (
 
                     <tr
                       key={followUp.id}
                     >
 
+                      {/* ID */}
+
                       <td>
                         {followUp.id}
                       </td>
 
 
+                      {/* NAME */}
+
                       <td>
-
-                        <strong>
-                          {followUp.name}
-                        </strong>
-
+                        {followUp.name}
                       </td>
 
+
+                      {/* PHONE */}
 
                       <td>
                         {followUp.phone}
                       </td>
 
 
+                      {/* PROPERTY */}
+
                       <td>
                         {followUp.propertyType}
                       </td>
 
+
+                      {/* DATE */}
 
                       <td>
 
@@ -551,19 +640,16 @@ const paginatedFollowUps =
                           }
                         >
 
-                          {followUp.followUpDate}
+                          {formatDate(
+                            followUp.followUpDate
+                          )}
 
                         </span>
 
                       </td>
 
 
-                      <td>
-
-                        {followUp.notes || "-"}
-
-                      </td>
-
+                      {/* STATUS */}
 
                       <td>
 
@@ -586,7 +672,21 @@ const paginatedFollowUps =
                       </td>
 
 
+                      {/* ACTIONS */}
+
                       <td>
+
+
+                            <button
+  className="btn btn-sm btn-success me-2"
+  onClick={() => completeFollowUp(followUp.id)}
+  disabled={followUp.status === "COMPLETED"}
+>
+  Complete
+</button>
+
+                          
+
 
                         <button
                           className="btn btn-sm btn-warning"
@@ -609,9 +709,7 @@ const paginatedFollowUps =
 
                           }}
                         >
-
-                          ✏️ Edit Lead
-
+                          Edit
                         </button>
 
                       </td>
@@ -627,39 +725,60 @@ const paginatedFollowUps =
 
           </table>
 
-{/* =========================================================
-    PAGINATION
-========================================================= */}
+        </div>
 
-{totalPages > 1 && (
-  <div className="d-flex justify-content-center align-items-center mt-4">
+      )}
 
-    <button
-      className="btn btn-outline-primary me-2"
-      disabled={currentPage === 1}
-      onClick={() =>
-        setCurrentPage(currentPage - 1)
-      }
-    >
-      ← Previous
-    </button>
 
-    <span className="fw-bold">
-      Page {currentPage} of {totalPages}
-    </span>
+      {/* =====================================================
+          PAGINATION
+      ===================================================== */}
 
-    <button
-      className="btn btn-outline-primary ms-2"
-      disabled={currentPage === totalPages}
-      onClick={() =>
-        setCurrentPage(currentPage + 1)
-      }
-    >
-      Next →
-    </button>
+      {totalPages > 1 && (
 
-  </div>
-)}
+        <div className="d-flex justify-content-center align-items-center mt-4 gap-2">
+
+          <button
+            className="btn btn-outline-primary"
+            disabled={
+              currentPage === 1
+            }
+            onClick={() =>
+              setCurrentPage(
+                currentPage - 1
+              )
+            }
+          >
+            ← Previous
+          </button>
+
+
+          <span className="fw-bold">
+
+            Page{" "}
+            {currentPage}
+            {" "}
+            of{" "}
+            {totalPages}
+
+          </span>
+
+
+          <button
+            className="btn btn-outline-primary"
+            disabled={
+              currentPage ===
+              totalPages
+            }
+            onClick={() =>
+              setCurrentPage(
+                currentPage + 1
+              )
+            }
+          >
+            Next →
+          </button>
+
         </div>
 
       )}
@@ -667,7 +786,7 @@ const paginatedFollowUps =
     </div>
 
   );
-
 }
 
 export default FollowUpList;
+
