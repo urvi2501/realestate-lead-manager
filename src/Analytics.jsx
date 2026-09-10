@@ -175,17 +175,13 @@ function Analytics({ onBack }) {
           className="btn btn-secondary"
           onClick={onBack}
         >
-          ← Back to Dashboard
+          ← Back to Dashboard 
         </button>
 
       </div>
 
 
-      {/* OVERVIEW */}
-
-      <h5 className="mb-3">
-        📊 Overview
-      </h5>
+     
 
       {/* OVERVIEW */}
 
