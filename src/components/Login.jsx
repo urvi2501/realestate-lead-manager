@@ -1,5 +1,6 @@
 import { useState } from "react";
 import axios from "axios";
+import { API_URL } from "../config";
 
 function Login({ onLogin }) {
 
@@ -14,7 +15,7 @@ function Login({ onLogin }) {
     try {
 
       const response = await axios.post(
-        "https://realestate-lead-manager-backend-production.up.railway.app/api/auth/login",
+        `${API_URL}/api/auth/login`,
         {
           email: email,
           password: password
@@ -138,3 +139,6 @@ onLogin(token);
 }
 
 export default Login;
+
+
+

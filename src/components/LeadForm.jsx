@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { createLead, updateLead } from "../services/LeadService";
 
@@ -7,15 +8,34 @@ function LeadForm({ lead, onSuccess, onCancel }) {
     name: lead?.name || "",
     phone: lead?.phone || "",
     email: lead?.email || "",
+
+    // New requirement fields
+    purpose: lead?.purpose || "",
+    category: lead?.category || "",
     propertyType: lead?.propertyType || "",
+    otherPropertyType: lead?.otherPropertyType || "",
+
+    carpetArea: lead?.carpetArea || "",
+    builtUpArea: lead?.builtUpArea || "",
+    superBuiltUpArea: lead?.superBuiltUpArea || "",
+
     budget: lead?.budget || "",
     location: lead?.location || "",
     leadSource: lead?.leadSource || "",
     status: lead?.status || "New",
     followUpDate: lead?.followUpDate || "",
+
+    additionalInformation: lead?.additionalInformation || "",
   });
 
   const [loading, setLoading] = useState(false);
+
+  // Automatic enquiry date and time
+  const [enquiryDateTime] = useState(
+    lead?.createdAt
+      ? new Date(lead.createdAt).toLocaleString("en-IN")
+      : new Date().toLocaleString("en-IN")
+  );
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -24,6 +44,25 @@ function LeadForm({ lead, onSuccess, onCancel }) {
       ...formData,
       [name]: value,
     });
+
+    // Clear property type when category changes
+    if (name === "category") {
+      setFormData((prev) => ({
+        ...prev,
+        category: value,
+        propertyType: "",
+        otherPropertyType: "",
+      }));
+    }
+
+    // Clear "Other" textbox when normal property type selected
+    if (name === "propertyType" && value !== "Other") {
+      setFormData((prev) => ({
+        ...prev,
+        propertyType: value,
+        otherPropertyType: "",
+      }));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -34,8 +73,21 @@ function LeadForm({ lead, onSuccess, onCancel }) {
 
       const data = {
         ...formData,
+
         budget: formData.budget
           ? Number(formData.budget)
+          : null,
+
+        carpetArea: formData.carpetArea
+          ? Number(formData.carpetArea)
+          : null,
+
+        builtUpArea: formData.builtUpArea
+          ? Number(formData.builtUpArea)
+          : null,
+
+        superBuiltUpArea: formData.superBuiltUpArea
+          ? Number(formData.superBuiltUpArea)
           : null,
       };
 
@@ -74,7 +126,27 @@ function LeadForm({ lead, onSuccess, onCancel }) {
 
           <form onSubmit={handleSubmit}>
 
+            {/* ========================= */}
+            {/* LEAD INFORMATION */}
+            {/* ========================= */}
+
+            <h5 className="mb-3">Lead Information</h5>
+
             <div className="row">
+
+              {/* Enquiry Date & Time */}
+              <div className="col-md-6 mb-3">
+                <label className="form-label">
+                  Enquiry Date & Time
+                </label>
+
+                <input
+                  type="text"
+                  className="form-control"
+                  value={enquiryDateTime}
+                  readOnly
+                />
+              </div>
 
               {/* Name */}
               <div className="col-md-6 mb-3">
@@ -123,27 +195,6 @@ function LeadForm({ lead, onSuccess, onCancel }) {
                 />
               </div>
 
-              {/* Property Type */}
-              <div className="col-md-6 mb-3">
-                <label className="form-label">
-                  Property Type
-                </label>
-
-                <select
-                  name="propertyType"
-                  className="form-select"
-                  value={formData.propertyType}
-                  onChange={handleChange}
-                >
-                  <option value="">Select Property</option>
-                  <option value="Flat">Flat</option>
-                  <option value="Apartment">Apartment</option>
-                  <option value="Villa">Villa</option>
-                  <option value="Plot">Plot</option>
-                  <option value="Commercial">Commercial</option>
-                </select>
-              </div>
-
               {/* Budget */}
               <div className="col-md-6 mb-3">
                 <label className="form-label">
@@ -155,21 +206,6 @@ function LeadForm({ lead, onSuccess, onCancel }) {
                   name="budget"
                   className="form-control"
                   value={formData.budget}
-                  onChange={handleChange}
-                />
-              </div>
-
-              {/* Location */}
-              <div className="col-md-6 mb-3">
-                <label className="form-label">
-                  Location
-                </label>
-
-                <input
-                  type="text"
-                  name="location"
-                  className="form-control"
-                  value={formData.location}
                   onChange={handleChange}
                 />
               </div>
@@ -196,24 +232,19 @@ function LeadForm({ lead, onSuccess, onCancel }) {
                 </select>
               </div>
 
-              {/* Status */}
+              {/* Location - UNCHANGED */}
               <div className="col-md-6 mb-3">
                 <label className="form-label">
-                  Status
+                  Location
                 </label>
 
-                <select
-                  name="status"
-                  className="form-select"
-                  value={formData.status}
+                <input
+                  type="text"
+                  name="location"
+                  className="form-control"
+                  value={formData.location}
                   onChange={handleChange}
-                >
-                  <option value="New">New</option>
-                  <option value="Interested">Interested</option>
-                  <option value="Follow-up">Follow-up</option>
-                  <option value="Converted">Converted</option>
-                  <option value="Lost">Lost</option>
-                </select>
+                />
               </div>
 
               {/* Follow-up Date */}
@@ -231,10 +262,340 @@ function LeadForm({ lead, onSuccess, onCancel }) {
                 />
               </div>
 
+              {/* Status - OPTIONAL */}
+              <div className="col-md-6 mb-3">
+                <label className="form-label">
+                  Status
+                </label>
+
+                <select
+                  name="status"
+                  className="form-select"
+                  value={formData.status}
+                  onChange={handleChange}
+                >
+                  <option value="">Select Status</option>
+                  <option value="New">New</option>
+                  <option value="Interested">Interested</option>
+                  <option value="Follow-up">Follow-up</option>
+                  <option value="Converted">Converted</option>
+                  <option value="Lost">Lost</option>
+                </select>
+              </div>
+
             </div>
 
-            {/* Buttons */}
-            <div className="mt-3">
+
+            {/* ========================= */}
+            {/* PROPERTY REQUIREMENT */}
+            {/* ========================= */}
+
+            <h5 className="mt-4 mb-3">
+              Property Requirement
+            </h5>
+
+            <div className="row">
+
+              {/* Purpose */}
+              <div className="col-md-6 mb-3">
+                <label className="form-label">
+                  Property Requirement
+                </label>
+
+                <select
+                  name="purpose"
+                  className="form-select"
+                  value={formData.purpose}
+                  onChange={handleChange}
+                >
+                  <option value="">Select Requirement</option>
+                  <option value="Sell">Sell</option>
+                  <option value="Rent">Rent</option>
+                </select>
+              </div>
+
+              {/* Category */}
+              <div className="col-md-6 mb-3">
+                <label className="form-label">
+                  Property Category
+                </label>
+
+                <select
+                  name="category"
+                  className="form-select"
+                  value={formData.category}
+                  onChange={handleChange}
+                >
+                  <option value="">
+                    Select Category
+                  </option>
+
+                  <option value="Residential">
+                    Residential
+                  </option>
+
+                  <option value="Commercial">
+                    Commercial
+                  </option>
+                </select>
+              </div>
+
+
+              {/* ========================= */}
+              {/* RESIDENTIAL */}
+              {/* ========================= */}
+
+              {formData.category === "Residential" && (
+                <>
+                  <div className="col-md-6 mb-3">
+
+                    <label className="form-label">
+                      Residential Property Type
+                    </label>
+
+                    <select
+                      name="propertyType"
+                      className="form-select"
+                      value={formData.propertyType}
+                      onChange={handleChange}
+                    >
+                      <option value="">
+                        Select Property Type
+                      </option>
+
+                      <option value="Flat / Apartment">
+                        Flat / Apartment
+                      </option>
+
+                      <option value="Bungalow / House">
+                        Bungalow / House
+                      </option>
+
+                      <option value="Villa">
+                        Villa
+                      </option>
+
+                      <option value="Builder Floor">
+                        Builder Floor
+                      </option>
+
+                      <option value="1 RK / Studio">
+                        1 RK / Studio
+                      </option>
+
+                      <option value="Serviced Apartment">
+                        Serviced Apartment
+                      </option>
+
+                      <option value="Farmhouse">
+                        Farmhouse
+                      </option>
+
+                      <option value="Other">
+                        Other
+                      </option>
+
+                    </select>
+
+                  </div>
+
+                  {/* Other Residential */}
+                  {formData.propertyType === "Other" && (
+                    <div className="col-md-6 mb-3">
+
+                      <label className="form-label">
+                        Other Residential Property Type
+                      </label>
+
+                      <input
+                        type="text"
+                        name="otherPropertyType"
+                        className="form-control"
+                        value={formData.otherPropertyType}
+                        onChange={handleChange}
+                        placeholder="Enter property type"
+                      />
+
+                    </div>
+                  )}
+                </>
+              )}
+
+
+              {/* ========================= */}
+              {/* COMMERCIAL */}
+              {/* ========================= */}
+
+              {formData.category === "Commercial" && (
+                <>
+                  <div className="col-md-6 mb-3">
+
+                    <label className="form-label">
+                      Commercial Property Type
+                    </label>
+
+                    <select
+                      name="propertyType"
+                      className="form-select"
+                      value={formData.propertyType}
+                      onChange={handleChange}
+                    >
+
+                      <option value="">
+                        Select Property Type
+                      </option>
+
+                      <option value="Shop / Showroom">
+                        Shop / Showroom
+                      </option>
+
+                      <option value="Hotel / Restaurant">
+                        Hotel / Restaurant
+                      </option>
+
+                      <option value="Office">
+                        Office
+                      </option>
+
+                      <option value="Warehouse / Storage">
+                        Warehouse / Storage
+                      </option>
+
+                      <option value="Industrial">
+                        Industrial
+                      </option>
+
+                      <option value="Hospitality">
+                        Hospitality
+                      </option>
+
+                      <option value="Other">
+                        Other
+                      </option>
+
+                    </select>
+
+                  </div>
+
+                  {/* Other Commercial */}
+                  {formData.propertyType === "Other" && (
+                    <div className="col-md-6 mb-3">
+
+                      <label className="form-label">
+                        Other Commercial Property Type
+                      </label>
+
+                      <input
+                        type="text"
+                        name="otherPropertyType"
+                        className="form-control"
+                        value={formData.otherPropertyType}
+                        onChange={handleChange}
+                        placeholder="Enter property type"
+                      />
+
+                    </div>
+                  )}
+                </>
+              )}
+
+            </div>
+
+
+            {/* ========================= */}
+            {/* AREA REQUIREMENT */}
+            {/* ========================= */}
+
+            <h5 className="mt-4 mb-3">
+              Area Requirement
+            </h5>
+
+            <div className="row">
+
+              {/* Carpet Area */}
+              <div className="col-md-4 mb-3">
+
+                <label className="form-label">
+                  Carpet Area (sq.ft.)
+                </label>
+
+                <input
+                  type="number"
+                  name="carpetArea"
+                  className="form-control"
+                  value={formData.carpetArea}
+                  onChange={handleChange}
+                  placeholder="Optional"
+                />
+
+              </div>
+
+              {/* Built-up Area */}
+              <div className="col-md-4 mb-3">
+
+                <label className="form-label">
+                  Built-up Area (sq.ft.)
+                </label>
+
+                <input
+                  type="number"
+                  name="builtUpArea"
+                  className="form-control"
+                  value={formData.builtUpArea}
+                  onChange={handleChange}
+                  placeholder="Optional"
+                />
+
+              </div>
+
+              {/* Super Built-up Area */}
+              <div className="col-md-4 mb-3">
+
+                <label className="form-label">
+                  Super Built-up Area (sq.ft.)
+                </label>
+
+                <input
+                  type="number"
+                  name="superBuiltUpArea"
+                  className="form-control"
+                  value={formData.superBuiltUpArea}
+                  onChange={handleChange}
+                  placeholder="Optional"
+                />
+
+              </div>
+
+            </div>
+
+
+            {/* ========================= */}
+            {/* ADDITIONAL INFORMATION */}
+            {/* ========================= */}
+
+            <h5 className="mt-4 mb-3">
+              Additional Information
+            </h5>
+
+            <div className="mb-3">
+
+              <textarea
+                name="additionalInformation"
+                className="form-control"
+                rows="4"
+                value={formData.additionalInformation}
+                onChange={handleChange}
+                placeholder="Enter any additional requirement or information (optional)"
+              />
+
+            </div>
+
+
+            {/* ========================= */}
+            {/* BUTTONS */}
+            {/* ========================= */}
+
+            <div className="mt-4">
 
               <button
                 type="submit"
@@ -268,3 +629,4 @@ function LeadForm({ lead, onSuccess, onCancel }) {
 }
 
 export default LeadForm;
+

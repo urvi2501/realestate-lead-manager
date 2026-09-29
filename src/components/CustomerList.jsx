@@ -1,432 +1,746 @@
-
-import { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   getAllCustomers,
   deleteCustomer,
 } from "../services/CustomerService";
+import AddCustomer from "./AddCustomer";
 
-function CustomerList({
-  onAddCustomer,
-  onEditCustomer,
-  goToDashboard,
-}) {
-
+function CustomerList({ onBackToDashboard }) {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Search and filter states
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("ALL");
-  const [propertyFilter, setPropertyFilter] = useState("ALL");
+  const [purposeFilter, setPurposeFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
 
-  // Pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const recordsPerPage = 5;
+  const [currentCustomerPage, setCurrentCustomerPage] = useState(1);
 
-  const loadCustomers = async () => {
-    try {
-      const response = await getAllCustomers();
+  const [editingCustomer, setEditingCustomer] = useState(null);
+  const [showCustomerForm, setShowCustomerForm] = useState(false);
 
-      console.log("Customers API:", response.data);
+  const customersPerPage = 5;
 
-      setCustomers(response.data);
-    } catch (error) {
-      console.error("Customer API Error:", error);
-      alert("Failed to load customers.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  // =========================================================
+  // LOAD CUSTOMERS
+  // =========================================================
 
-  useEffect(() => {
+ const loadCustomers = async () => {
+  try {
+    setLoading(true);
+
+    const response = await getAllCustomers();
+
+    const data = response.data || [];
+
+    console.log("Customer List API:", data);
+
+    setCustomers(Array.isArray(data) ? data : []);
+
+  } catch (error) {
+    console.error("Error loading customers:", error);
+
+    alert(
+      error?.response?.data?.message ||
+        "Failed to load customers."
+    );
+  } finally {
+    setLoading(false);
+  }
+};
+useEffect(() => {
+  const timer = setTimeout(() => {
     loadCustomers();
-  }, []);
+  }, 0);
 
-  const handleDelete = async (id) => {
+  return () => clearTimeout(timer);
+}, []);
 
-    if (!window.confirm("Are you sure you want to delete this customer?")) {
+  // =========================================================
+  // DELETE CUSTOMER
+  // =========================================================
+
+  const handleDeleteCustomer = async (id) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this customer?"
+    );
+
+    if (!confirmed) {
       return;
     }
 
     try {
-
       await deleteCustomer(id);
-
-      await loadCustomers();
 
       alert("Customer deleted successfully.");
 
+      await loadCustomers();
+
     } catch (error) {
+      console.error(
+        "Error deleting customer:",
+        error
+      );
 
-      console.error("Delete Customer Error:", error);
-      alert("Failed to delete customer.");
-
+      alert(
+        error?.response?.data?.message ||
+          "Failed to delete customer."
+      );
     }
   };
 
-  // ============================
-  // SEARCH + FILTER
-  // ============================
+  // =========================================================
+  // EDIT CUSTOMER
+  // =========================================================
 
-  const filteredCustomers = customers.filter((customer) => {
+  const handleEditCustomer = (customer) => {
+    setEditingCustomer(customer);
+    setShowCustomerForm(true);
+  };
 
-    const searchText = search.toLowerCase();
+  // =========================================================
+  // ADD CUSTOMER
+  // =========================================================
 
-    const matchesSearch =
-      (customer.name || "").toLowerCase().includes(searchText) ||
-      (customer.phone || "").toLowerCase().includes(searchText) ||
-      (customer.email || "").toLowerCase().includes(searchText);
+  const handleAddCustomer = () => {
+    setEditingCustomer(null);
+    setShowCustomerForm(true);
+  };
 
-    const matchesStatus =
-      statusFilter === "ALL" ||
-      (customer.status || "").toLowerCase() === statusFilter.toLowerCase();
+  // =========================================================
+  // AFTER SAVE / UPDATE
+  // =========================================================
 
-    const matchesProperty =
-      propertyFilter === "ALL" ||
-      (customer.propertyType || "").toLowerCase() === propertyFilter.toLowerCase();
+  const handleCustomerSaved = async () => {
+    setShowCustomerForm(false);
+    setEditingCustomer(null);
 
-    return matchesSearch && matchesStatus && matchesProperty;
-  });
+    await loadCustomers();
+  };
 
-  // ============================
+  // =========================================================
+  // CANCEL FORM
+  // =========================================================
+
+  const handleCustomerCancel = () => {
+    setShowCustomerForm(false);
+    setEditingCustomer(null);
+  };
+
+  // =========================================================
+  // FILTER CUSTOMERS
+  // =========================================================
+
+  const filteredCustomers = useMemo(() => {
+    const searchValue = search
+      .trim()
+      .toLowerCase();
+
+    return customers.filter((customer) => {
+
+      const matchesSearch =
+        !searchValue ||
+        customer.name
+          ?.toLowerCase()
+          .includes(searchValue) ||
+        customer.phone
+          ?.toLowerCase()
+          .includes(searchValue) ||
+        customer.email
+          ?.toLowerCase()
+          .includes(searchValue) ||
+        customer.location
+          ?.toLowerCase()
+          .includes(searchValue);
+
+      const matchesPurpose =
+        !purposeFilter ||
+        customer.purpose === purposeFilter;
+
+      const matchesCategory =
+        !categoryFilter ||
+        customer.category === categoryFilter;
+
+      const matchesStatus =
+        !statusFilter ||
+        customer.status === statusFilter;
+
+      return (
+        matchesSearch &&
+        matchesPurpose &&
+        matchesCategory &&
+        matchesStatus
+      );
+    });
+
+  }, [
+    customers,
+    search,
+    purposeFilter,
+    categoryFilter,
+    statusFilter,
+  ]);
+
+  // =========================================================
   // PAGINATION
-  // ============================
+  // =========================================================
 
-  const totalPages = Math.ceil(
-    filteredCustomers.length / recordsPerPage
+  const totalCustomerPages = Math.max(
+    1,
+    Math.ceil(
+      filteredCustomers.length /
+        customersPerPage
+    )
   );
 
   const startIndex =
-    (currentPage - 1) * recordsPerPage;
+    (currentCustomerPage - 1) *
+    customersPerPage;
 
-  const currentCustomers = filteredCustomers.slice(
-    startIndex,
-    startIndex + recordsPerPage
-  );
+  const currentCustomers =
+    filteredCustomers.slice(
+      startIndex,
+      startIndex + customersPerPage
+    );
 
-  const handleSearchChange = (e) => {
-    setSearch(e.target.value);
-    setCurrentPage(1);
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentCustomerPage(1);
+  }, [
+    search,
+    purposeFilter,
+    categoryFilter,
+    statusFilter,
+  ]);
+
+  // =========================================================
+  // DOWNLOAD CUSTOMERS
+  // =========================================================
+
+  const handleDownloadCustomers = () => {
+
+    if (filteredCustomers.length === 0) {
+      alert("No customer data available to download.");
+      return;
+    }
+
+    const headers = [
+      "ID",
+      "Name",
+      "Phone",
+      "Email",
+      "Purpose",
+      "Category",
+      "Property Type",
+      "Other Property Type",
+      "Location",
+      "Budget",
+      "Carpet Area",
+      "Built-up Area",
+      "Super Built-up Area",
+      "Lead Source",
+      "Status",
+      "Enquiry Date & Time",
+      "Address",
+      "Additional Information",
+    ];
+
+    const rows = filteredCustomers.map(
+      (customer) => [
+        customer.id ?? "",
+        customer.name ?? "",
+        customer.phone ?? "",
+        customer.email ?? "",
+        customer.purpose ?? "",
+        customer.category ?? "",
+        customer.propertyType ?? "",
+        customer.otherPropertyType ?? "",
+        customer.location ?? "",
+        customer.budget ?? "",
+        customer.carpetArea ?? "",
+        customer.builtUpArea ?? "",
+        customer.superBuiltUpArea ?? "",
+        customer.leadSource ?? "",
+        customer.status ?? "",
+        customer.enquiryDateTime ?? "",
+        customer.address ?? "",
+        customer.additionalInformation ?? "",
+      ]
+    );
+
+    const csvContent = [
+      headers,
+      ...rows,
+    ]
+      .map((row) =>
+        row
+          .map((value) => {
+            const text = String(value);
+            return `"${text.replace(/"/g, '""')}"`;
+          })
+          .join(",")
+      )
+      .join("\n");
+
+    const blob = new Blob(
+      [csvContent],
+      {
+        type: "text/csv;charset=utf-8;",
+      }
+    );
+
+    const url =
+      URL.createObjectURL(blob);
+
+    const link =
+      document.createElement("a");
+
+    link.href = url;
+    link.download =
+      "customers.csv";
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
   };
 
-  const handleStatusChange = (e) => {
-    setStatusFilter(e.target.value);
-    setCurrentPage(1);
-  };
+  // =========================================================
+  // CUSTOMER FORM
+  // =========================================================
 
-  const handlePropertyChange = (e) => {
-    setPropertyFilter(e.target.value);
-    setCurrentPage(1);
-  };
-
-  const clearFilters = () => {
-    setSearch("");
-    setStatusFilter("ALL");
-    setPropertyFilter("ALL");
-    setCurrentPage(1);
-  };
-
-  if (loading) {
+  if (showCustomerForm) {
     return (
-      <p className="text-center mt-4">
-        Loading customers...
-      </p>
+      <AddCustomer
+        editingCustomer={editingCustomer}
+        onSaved={handleCustomerSaved}
+        onCancel={handleCustomerCancel}
+      />
     );
   }
 
+  // =========================================================
+  // MAIN CUSTOMER LIST
+  // =========================================================
+
   return (
-    <div className="container mt-4">
+    <div className="card shadow-sm border-0">
 
-      {/* HEADER */}
-      <div className="d-flex justify-content-between align-items-center mb-3">
+      <div className="card-body">
 
-        <h3>👥 Customers</h3>
+        {/* PAGE HEADER */}
+        <div className="d-flex justify-content-between align-items-center mb-4">
 
-        <div className="d-flex gap-2">
+          <div>
+            <h3 className="fw-bold mb-1">
+              📋 Customer Management
+            </h3>
 
-          <button
-            className="btn btn-secondary"
-            onClick={goToDashboard}
-          >
-            ← Back to Dashboard
-          </button>
+            <small className="text-muted">
+              Manage and track all your converted customers
+            </small>
+          </div>
 
-          <button
-            className="btn btn-primary"
-            onClick={onAddCustomer}
-          >
-            ➕ Add Customer
-          </button>
+          <div className="d-flex gap-2">
 
-        </div>
+            <button
+              className="btn btn-primary"
+              onClick={handleAddCustomer}
+            >
+              ➕ Add Customer
+            </button>
 
-      </div>
-
-
-      {/* SEARCH + FILTER SECTION */}
-      <div className="card shadow-sm mb-4">
-
-        <div className="card-body">
-
-          <div className="row g-3">
-
-            {/* SEARCH */}
-            <div className="col-md-5">
-
-              <label className="form-label fw-bold">
-                🔍 Search Customer
-              </label>
-
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Search by name, phone or email"
-                value={search}
-                onChange={handleSearchChange}
-              />
-
-            </div>
-
-
-            {/* STATUS FILTER */}
-            <div className="col-md-3">
-
-              <label className="form-label fw-bold">
-                🎯 Status
-              </label>
-
-              <select
-                className="form-select"
-                value={statusFilter}
-                onChange={handleStatusChange}
-              >
-
-                <option value="ALL">
-                  All Status
-                </option>
-
-                <option value="NEW">
-                  New
-                </option>
-
-                <option value="INTERESTED">
-                  Interested
-                </option>
-
-                <option value="CONVERTED">
-                  Converted
-                </option>
-
-              </select>
-
-            </div>
-
-
-           
-{/* PROPERTY FILTER */}
-<div className="col-md-3">
-
-  <label className="form-label fw-bold">
-    🏠 Property Type
-  </label>
-
-  <select
-    className="form-select"
-    value={propertyFilter}
-    onChange={handlePropertyChange}
-  >
-
-    <option value="ALL">
-      All Properties
-    </option>
-
-    <option value="FLAT">
-      Flat
-    </option>
-
-    <option value="VILLA">
-      Villa
-    </option>
-
-    <option value="HOUSE">
-      House
-    </option>
-
-    <option value="COMMERCIAL">
-      Commercial
-    </option>
-
-  </select>
-
-</div>
-
-            {/* CLEAR */}
-            <div className="col-md-1 d-flex align-items-end">
-
-              <button
-                className="btn btn-outline-secondary w-100"
-                onClick={clearFilters}
-                title="Clear filters"
-              >
-                ✖
-              </button>
-
-            </div>
+            <button
+              className="btn btn-outline-secondary"
+              onClick={onBackToDashboard}
+            >
+              ← Dashboard
+            </button>
 
           </div>
 
         </div>
 
-      </div>
+        {/* SEARCH + FILTER */}
+        <div className="row g-3 mb-4 align-items-end">
 
+          {/* SEARCH */}
+          <div className="col-md-3">
 
-      {/* RESULT COUNT */}
-      <div className="mb-2">
+            <label className="form-label fw-semibold">
+              🔎 Search Customer
+            </label>
 
-        <small className="text-muted">
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Name, phone, location..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setCurrentCustomerPage(1);
+              }}
+            />
 
-          Showing{" "}
-          {filteredCustomers.length === 0
-            ? 0
-            : startIndex + 1}
-          {" - "}
-          {Math.min(
-            startIndex + recordsPerPage,
-            filteredCustomers.length
-          )}
-          {" of "}
-          {filteredCustomers.length} customers
+          </div>
 
-        </small>
+          {/* PURPOSE */}
+          <div className="col-md-2">
 
-      </div>
+            <label className="form-label fw-semibold">
+              🏠 Purpose
+            </label>
 
+            <select
+              className="form-select"
+              value={purposeFilter}
+              onChange={(e) => {
+                setPurposeFilter(e.target.value);
+                setCurrentCustomerPage(1);
+              }}
+            >
+              <option value="">
+                All
+              </option>
 
-      {/* TABLE */}
+              <option value="Rent">
+                Rent
+              </option>
 
-      {filteredCustomers.length === 0 ? (
+              <option value="Sell">
+                Sell
+              </option>
+            </select>
 
-        <div className="alert alert-info">
-          No customers found matching your search/filter.
+          </div>
+
+          {/* CATEGORY */}
+          <div className="col-md-2">
+
+            <label className="form-label fw-semibold">
+              🏢 Category
+            </label>
+
+            <select
+              className="form-select"
+              value={categoryFilter}
+              onChange={(e) => {
+                setCategoryFilter(e.target.value);
+                setCurrentCustomerPage(1);
+              }}
+            >
+              <option value="">
+                All
+              </option>
+
+              <option value="Residential">
+                Residential
+              </option>
+
+              <option value="Commercial">
+                Commercial
+              </option>
+
+            </select>
+
+          </div>
+
+          {/* STATUS */}
+          <div className="col-md-2">
+
+            <label className="form-label fw-semibold">
+              📌 Status
+            </label>
+
+            <select
+              className="form-select"
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentCustomerPage(1);
+              }}
+            >
+              <option value="">
+                All
+              </option>
+
+              <option value="Active">
+                Active
+              </option>
+
+              <option value="Interested">
+                Interested
+              </option>
+
+              <option value="Deal In Progress">
+                Deal In Progress
+              </option>
+
+              <option value="Deal Finalized">
+                Deal Finalized
+              </option>
+
+              <option value="Inactive">
+                Inactive
+              </option>
+
+            </select>
+
+          </div>
+
+          {/* DOWNLOAD */}
+          <div className="col-md-2">
+
+            <button
+              type="button"
+              className="btn btn-success w-80"
+              onClick={handleDownloadCustomers}
+            >
+              📥 Download
+            </button>
+
+          </div>
+
         </div>
 
-      ) : (
+        {/* LOADING */}
+        {loading ? (
 
-        <div className="table-responsive">
+          <div className="alert alert-info">
+            Loading customers...
+          </div>
 
-          <table className="table table-bordered table-hover">
+        ) : currentCustomers.length === 0 ? (
 
-            <thead className="table-dark">
+          <div className="alert alert-info">
+            No customers found.
+          </div>
 
-              <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Phone</th>
-                <th>Email</th>
-                <th>Property</th>
-                <th>Budget</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
+        ) : (
 
-            </thead>
+          /* CUSTOMER TABLE */
+          <div className="table-responsive">
 
-            <tbody>
+            <table className="table table-bordered table-hover align-middle">
 
-              {currentCustomers.map((customer) => (
+              <thead className="table-dark">
 
-                <tr key={customer.id}>
+                <tr>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Phone</th>
+                  <th>Email</th>
+                  <th>Purpose</th>
+                  <th>Category</th>
+                  <th>Property Type</th>
+                  <th>Location</th>
+                  <th>Budget</th>
+                  <th>Lead Source</th>
+                  <th>Status</th>
 
-                  <td>{customer.id}</td>
-
-                  <td>{customer.name}</td>
-
-                  <td>{customer.phone}</td>
-
-                  <td>{customer.email}</td>
-
-                  <td>{customer.propertyType}</td>
-
-                  <td>{customer.budget}</td>
-
-                  <td>
-
-                    <span className="badge bg-success">
-                      {customer.status}
-                    </span>
-
-                  </td>
-
-                  <td>
-
-                    <button
-                      className="btn btn-sm btn-warning me-2"
-                      onClick={() =>
-                        onEditCustomer(customer)
-                      }
-                    >
-                      Edit
-                    </button>
-
-                    <button
-                      className="btn btn-sm btn-danger"
-                      onClick={() =>
-                        handleDelete(customer.id)
-                      }
-                    >
-                      Delete
-                    </button>
-
-                  </td>
+                  <th style={{ minWidth: "190px" }}>
+                    Actions
+                  </th>
 
                 </tr>
 
-              ))}
+              </thead>
 
-            </tbody>
+              <tbody>
 
-          </table>
+                {currentCustomers.map(
+                  (item) => (
 
-        </div>
+                    <tr key={item.id}>
 
-      )}
+                      <td>
+                        {item.id}
+                      </td>
 
+                      <td>
+                        <strong>
+                          {item.name || "-"}
+                        </strong>
+                      </td>
 
-      {/* PAGINATION */}
+                      <td>
+                        {item.phone || "-"}
+                      </td>
 
-      {totalPages > 1 && (
+                      <td>
+                        {item.email || "-"}
+                      </td>
 
-        <div className="d-flex justify-content-center align-items-center mt-4 gap-2">
+                      <td>
 
-          <button
-            className="btn btn-outline-primary"
-            disabled={currentPage === 1}
-            onClick={() =>
-              setCurrentPage(currentPage - 1)
-            }
-          >
-            ← Previous
-          </button>
+                        {item.purpose ? (
 
+                          <span
+                            className={
+                              item.purpose ===
+                              "Sell"
+                                ? "badge bg-success"
+                                : "badge bg-info text-dark"
+                            }
+                          >
+                            {item.purpose}
+                          </span>
 
-          <span className="fw-bold">
-            Page {currentPage} of {totalPages}
-          </span>
+                        ) : (
+                          "-"
+                        )}
 
+                      </td>
 
-          <button
-            className="btn btn-outline-primary"
-            disabled={currentPage === totalPages}
-            onClick={() =>
-              setCurrentPage(currentPage + 1)
-            }
-          >
-            Next →
-          </button>
+                      <td>
+                        {item.category || "-"}
+                      </td>
 
-        </div>
+                      <td>
+                        {item.otherPropertyType ||
+                          item.propertyType ||
+                          "-"}
+                      </td>
 
-      )}
+                      <td>
+                        {item.location || "-"}
+                      </td>
+
+                      <td>
+
+                        {item.budget !== null &&
+                        item.budget !== undefined &&
+                        item.budget !== "" ? (
+
+                          `₹${Number(
+                            item.budget
+                          ).toLocaleString(
+                            "en-IN"
+                          )}`
+
+                        ) : (
+                          "-"
+                        )}
+
+                      </td>
+
+                      <td>
+                        {item.leadSource || "-"}
+                      </td>
+
+                      <td>
+
+                        <span
+                          className={
+                            item.status ===
+                            "Deal Finalized"
+                              ? "badge bg-success"
+                              : item.status ===
+                                "Interested"
+                              ? "badge bg-warning text-dark"
+                              : item.status ===
+                                "Deal In Progress"
+                              ? "badge bg-info text-dark"
+                              : item.status ===
+                                "Inactive"
+                              ? "badge bg-danger"
+                              : "badge bg-primary"
+                          }
+                        >
+                          {item.status || "Active"}
+                        </span>
+
+                      </td>
+
+                      <td>
+
+                        <div className="d-flex gap-2 flex-nowrap">
+
+                          <button
+                            className="btn btn-sm btn-warning"
+                            onClick={() =>
+                              handleEditCustomer(
+                                item
+                              )
+                            }
+                          >
+                            ✏️ Edit
+                          </button>
+
+                          <button
+                            className="btn btn-sm btn-danger"
+                            onClick={() =>
+                              handleDeleteCustomer(
+                                item.id
+                              )
+                            }
+                          >
+                            🗑️ Delete
+                          </button>
+
+                        </div>
+
+                      </td>
+
+                    </tr>
+
+                  )
+                )}
+
+              </tbody>
+
+            </table>
+
+          </div>
+        )}
+
+        {/* PAGINATION */}
+        {filteredCustomers.length > 0 && (
+
+          <div className="d-flex justify-content-between align-items-center mt-4">
+
+            <button
+              className="btn btn-outline-secondary"
+              disabled={
+                currentCustomerPage === 1
+              }
+              onClick={() =>
+                setCurrentCustomerPage(
+                  currentCustomerPage - 1
+                )
+              }
+            >
+              ← Previous
+            </button>
+
+            <span className="fw-semibold">
+              Page {currentCustomerPage} of{" "}
+              {totalCustomerPages}
+            </span>
+
+            <button
+              className="btn btn-primary"
+              disabled={
+                currentCustomerPage >=
+                totalCustomerPages
+              }
+              onClick={() =>
+                setCurrentCustomerPage(
+                  currentCustomerPage + 1
+                )
+              }
+            >
+              Next →
+            </button>
+
+          </div>
+
+        )}
+
+      </div>
 
     </div>
   );

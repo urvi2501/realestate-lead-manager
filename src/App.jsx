@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import * as XLSX from "xlsx";
 import FollowUpList from "./components/FollowUpList";
 import Dashboard from "./components/Dashboard";
 import Login from "./components/Login";
@@ -67,17 +68,25 @@ function App() {
   // 5. LEAD STATE
   // =========================================================
 
-  const emptyLead = {
-    name: "",
-    phone: "",
-    email: "",
-    propertyType: "",
-    budget: "",
-    location: "",
-    leadSource: "",
-    status: "",
-    followUpDate: "",
-  };
+ const emptyLead = {
+  name: "",
+  phone: "",
+  email: "",
+  enquiryDateTime: "",
+  purpose: "",
+  category: "",
+  propertyType: "",
+  otherPropertyType: "",
+  budget: "",
+  location: "",
+  carpetArea: "",
+  builtUpArea: "",
+  superBuiltUpArea: "",
+  leadSource: "",
+  status: "",
+  followUpDate: "",
+  additionalInformation: "",
+};
 
   const [lead, setLead] = useState(emptyLead);
   const [editingId, setEditingId] = useState(null);
@@ -92,8 +101,9 @@ function App() {
   
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [currentLeadPage, setCurrentLeadPage] = useState(1);
-
+const [purposeFilter, setPurposeFilter] = useState("");
+const [categoryFilter, setCategoryFilter] = useState("");
+const [currentLeadPage, setCurrentLeadPage] = useState(1);
   const leadsPerPage = 5;
 
 
@@ -146,6 +156,46 @@ setConvertedLeads(
     }
   };
 
+  const handleDownloadLeads = () => {
+  if (filteredLeads.length === 0) {
+    alert("No lead data available to download.");
+    return;
+  }
+
+  const excelData = filteredLeads.map((lead) => ({
+    ID: lead.id || "",
+    Name: lead.name || "",
+    Phone: lead.phone || "",
+    Email: lead.email || "",
+    Purpose: lead.purpose || "",
+    Category: lead.category || "",
+    "Property Type": lead.propertyType || "",
+    Location: lead.location || "",
+    Budget: lead.budget || "",
+    "Lead Source": lead.leadSource || "",
+    "Follow-up Date": lead.followUpDate || "",
+    Status: lead.status || "",
+    "Additional Information":
+      lead.additionalInformation || ""
+  }));
+
+  const worksheet =
+    XLSX.utils.json_to_sheet(excelData);
+
+  const workbook =
+    XLSX.utils.book_new();
+
+  XLSX.utils.book_append_sheet(
+    workbook,
+    worksheet,
+    "Leads"
+  );
+
+  XLSX.writeFile(
+    workbook,
+    "PropertyInnConsultancy_Leads.xlsx"
+  );
+};
 
   // =========================================================
   // 9. LOAD CUSTOMER DASHBOARD
@@ -187,6 +237,8 @@ setConvertedLeads(
       loadDashboard();
       loadCustomerDashboard();
     }
+   
+  
   }, [loggedInUser]);
 
 
@@ -239,55 +291,90 @@ setConvertedLeads(
   // =========================================================
   // 15. EDIT LEAD
   // =========================================================
+const handleEditLead = (selectedLead) => {
+  setLead({
+    name: selectedLead.name || "",
+    phone: selectedLead.phone || "",
+    email: selectedLead.email || "",
+    enquiryDateTime: selectedLead.enquiryDateTime || "",
+    purpose: selectedLead.purpose || "",
+    category: selectedLead.category || "",
+    propertyType: selectedLead.propertyType || "",
+    otherPropertyType: selectedLead.otherPropertyType || "",
+    budget: selectedLead.budget ?? "",
+    location: selectedLead.location || "",
+    carpetArea: selectedLead.carpetArea ?? "",
+    builtUpArea: selectedLead.builtUpArea ?? "",
+    superBuiltUpArea: selectedLead.superBuiltUpArea ?? "",
+    leadSource: selectedLead.leadSource || "",
+    status: selectedLead.status || "",
+    followUpDate: selectedLead.followUpDate || "",
+    additionalInformation:
+      selectedLead.additionalInformation || "",
+  });
 
-  const handleEditLead = (selectedLead) => {
-
-    setLead({
-      name: selectedLead.name || "",
-      phone: selectedLead.phone || "",
-      email: selectedLead.email || "",
-      propertyType: selectedLead.propertyType || "",
-      budget: selectedLead.budget ?? "",
-      location: selectedLead.location || "",
-      leadSource: selectedLead.leadSource || "",
-      status: selectedLead.status || "",
-      followUpDate: selectedLead.followUpDate || "",
-    });
-
-    setEditingId(selectedLead.id);
-    setCurrentPage("lead-form");
-  };
-
+  setEditingId(selectedLead.id);
+  setCurrentPage("lead-form");
+};
 
   // =========================================================
   // 16. SAVE / UPDATE LEAD
   // =========================================================
 
-  const handleSubmitLead = async (e) => {
-    e.preventDefault();
+ const handleSubmitLead = async (e) => {
+  e.preventDefault();
 
-    try {
+  try {
+    const data = {
+      ...lead,
+      budget:
+        lead.budget === ""
+          ? null
+          : Number(lead.budget),
 
-      if (editingId) {
-        await updateLead(editingId, lead);
-        alert("Lead updated successfully.");
-      } else {
-        await addLead(lead);
-        alert("Lead added successfully.");
-      }
+      carpetArea:
+        lead.carpetArea === ""
+          ? null
+          : Number(lead.carpetArea),
 
-      await refreshDashboard();
+      builtUpArea:
+        lead.builtUpArea === ""
+          ? null
+          : Number(lead.builtUpArea),
 
-      setLead(emptyLead);
-      setEditingId(null);
-      setCurrentPage("leads");
+      superBuiltUpArea:
+        lead.superBuiltUpArea === ""
+          ? null
+          : Number(lead.superBuiltUpArea),
+    };
 
-    } catch (error) {
-      console.error("Save Lead Error:", error);
-      alert("Failed to save lead.");
+    if (editingId) {
+      await updateLead(editingId, data);
+      alert("Lead updated successfully.");
+    } else {
+      await addLead(data);
+      alert("Lead added successfully.");
     }
-  };
 
+    await refreshDashboard();
+
+    setLead({
+      ...emptyLead
+    });
+
+    setEditingId(null);
+    setCurrentPage("leads");
+
+  } catch (error) {
+    console.error("Save Lead Error:", error);
+    console.error("Server Response:", error.response?.data);
+
+    alert(
+      error.response?.data ||
+      "Failed to save lead."
+    );
+  }
+};
 
   // =========================================================
   // 17. DELETE LEAD
@@ -317,34 +404,43 @@ setConvertedLeads(
   // 18. CONVERT LEAD -> CUSTOMER
   // =========================================================
 
-  const handleConvertLead = async (selectedLead) => {
+ 
+const handleConvertLead = async (selectedLead) => {
 
-    if (
-      !window.confirm(
-        `Convert ${selectedLead.name} into a customer?`
-      )
-    ) {
-      return;
-    }
+  if (
+    !window.confirm(
+      `Convert ${selectedLead.name} into a customer?`
+    )
+  ) {
+    return;
+  }
 
-    try {
+  try {
 
-      await convertLeadToCustomer(selectedLead.id);
+    await convertLeadToCustomer(selectedLead.id);
 
-      alert("Lead converted to customer successfully!");
+    alert("Lead converted to customer successfully!");
 
-      await refreshDashboard();
+    // Refresh dashboard
+    await refreshDashboard();
 
-    } catch (error) {
+    // Refresh customer list
+    await fetchCustomers();
 
-      console.error("Convert Lead Error:", error);
+    // Open Customer module
+    setCurrentPage("customers");
 
-      alert(
-        error.response?.data ||
-        "Failed to convert lead."
-      );
-    }
-  };
+  } catch (error) {
+
+    console.error("Convert Lead Error:", error);
+
+    alert(
+      error.response?.data ||
+      "Failed to convert lead."
+    );
+  }
+};
+
 
 
   // =========================================================
@@ -396,6 +492,7 @@ setConvertedLeads(
     setCurrentPage("customers");
   };
 
+  
 
   // =========================================================
   // 24. PROPERTY LIST
@@ -470,18 +567,38 @@ const handleViewEmail = () => {
   // 29. FILTER LEADS
   // =========================================================
 
-  const filteredLeads = leads
-    .filter((item) =>
-      item.name
-        ?.toLowerCase()
-        .includes(search.toLowerCase())
-    )
-    .filter(
-      (item) =>
-        statusFilter === "" ||
-        item.status === statusFilter
-    );
+const filteredLeads = leads.filter((lead) => {
+  const searchText = search.toLowerCase().trim();
 
+  const matchesSearch =
+    lead.name?.toLowerCase().includes(searchText) ||
+    lead.phone?.toLowerCase().includes(searchText) ||
+    lead.email?.toLowerCase().includes(searchText) ||
+    lead.location?.toLowerCase().includes(searchText) ||
+    lead.propertyType?.toLowerCase().includes(searchText);
+
+  const matchesPurpose =
+    purposeFilter === "" ||
+    lead.purpose?.toLowerCase() ===
+      purposeFilter.toLowerCase();
+
+  const matchesCategory =
+    categoryFilter === "" ||
+    lead.category?.toLowerCase() ===
+      categoryFilter.toLowerCase();
+
+  const matchesStatus =
+    statusFilter === "" ||
+    lead.status?.toLowerCase() ===
+      statusFilter.toLowerCase();
+
+  return (
+    matchesSearch &&
+    matchesPurpose &&
+    matchesCategory &&
+    matchesStatus
+  );
+});
 
   // =========================================================
   // 30. LEAD PAGINATION
@@ -653,15 +770,10 @@ const handleViewEmail = () => {
             LEAD LIST MODULE
             =================================================== */}
 {currentPage === "leads" && (
-
   <div className="card shadow-sm border-0">
-
     <div className="card-body">
 
-      {/* ================================
-          PAGE HEADER
-      ================================= */}
-
+      {/* PAGE HEADER */}
       <div className="d-flex justify-content-between align-items-center mb-4">
 
         <div>
@@ -691,18 +803,13 @@ const handleViewEmail = () => {
           </button>
 
         </div>
-
       </div>
 
+      {/* SEARCH + FILTER */}
+      <div className="row g-3 mb-4 align-items-end">
 
-      {/* ================================
-          SEARCH + FILTER
-      ================================= */}
-
-      <div className="row g-3 mb-4">
-
-        <div className="col-md-8">
-
+        {/* SEARCH */}
+        <div className="col-md-3">
           <label className="form-label fw-semibold">
             🔎 Search Lead
           </label>
@@ -710,21 +817,63 @@ const handleViewEmail = () => {
           <input
             type="text"
             className="form-control"
-            placeholder="Search lead by name..."
+            placeholder="Name, phone, location..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
               setCurrentLeadPage(1);
             }}
           />
-
         </div>
 
-
-        <div className="col-md-4">
-
+        {/* PURPOSE */}
+        <div className="col-md-2">
           <label className="form-label fw-semibold">
-            📌 Filter by Status
+            🏠 Purpose
+          </label>
+
+          <select
+            className="form-select"
+            value={purposeFilter}
+            onChange={(e) => {
+              setPurposeFilter(e.target.value);
+              setCurrentLeadPage(1);
+            }}
+          >
+            <option value="">All</option>
+            <option value="Rent">Rent</option>
+            <option value="Sell">Sell</option>
+          </select>
+        </div>
+
+        {/* CATEGORY */}
+        <div className="col-md-2">
+          <label className="form-label fw-semibold">
+            🏢 Category
+          </label>
+
+          <select
+            className="form-select"
+            value={categoryFilter}
+            onChange={(e) => {
+              setCategoryFilter(e.target.value);
+              setCurrentLeadPage(1);
+            }}
+          >
+            <option value="">All</option>
+            <option value="Residential">
+              Residential
+            </option>
+            <option value="Commercial">
+              Commercial
+            </option>
+          </select>
+        </div>
+
+        {/* STATUS */}
+        <div className="col-md-2">
+          <label className="form-label fw-semibold">
+            📌 Status
           </label>
 
           <select
@@ -735,34 +884,35 @@ const handleViewEmail = () => {
               setCurrentLeadPage(1);
             }}
           >
-
-            <option value="">
-              All Status
-            </option>
-
-            <option value="New">
-              New
-            </option>
-
+            <option value="">All</option>
+            <option value="New">New</option>
             <option value="Interested">
               Interested
             </option>
-
+            <option value="Follow-up">
+              Follow-up
+            </option>
             <option value="Converted">
               Converted
             </option>
-
+            <option value="Lost">Lost</option>
           </select>
+        </div>
 
+        {/* DOWNLOAD */}
+        <div className="col-md-2">
+          <button
+            type="button"
+            className="btn btn-success w-80"
+            onClick={handleDownloadLeads}
+          >
+            📥 Download
+          </button>
         </div>
 
       </div>
 
-
-      {/* ================================
-          LEAD TABLE
-      ================================= */}
-
+      {/* LEAD TABLE */}
       {currentLeads.length === 0 ? (
 
         <div className="alert alert-info">
@@ -776,22 +926,24 @@ const handleViewEmail = () => {
           <table className="table table-bordered table-hover align-middle">
 
             <thead className="table-dark">
-
               <tr>
                 <th>ID</th>
                 <th>Name</th>
                 <th>Phone</th>
                 <th>Email</th>
-                <th>Property</th>
+                <th>Purpose</th>
+                <th>Category</th>
+                <th>Property Type</th>
+                <th>Location</th>
                 <th>Budget</th>
+                <th>Lead Source</th>
+                <th>Follow-up</th>
                 <th>Status</th>
                 <th style={{ minWidth: "280px" }}>
                   Actions
                 </th>
               </tr>
-
             </thead>
-
 
             <tbody>
 
@@ -799,49 +951,87 @@ const handleViewEmail = () => {
 
                 <tr key={item.id}>
 
-                  <td>
-                    {item.id}
-                  </td>
+                  <td>{item.id}</td>
 
                   <td>
                     <strong>
-                      {item.name}
+                      {item.name || "-"}
                     </strong>
                   </td>
 
                   <td>
-                    {item.phone}
+                    {item.phone || "-"}
                   </td>
 
                   <td>
-                    {item.email}
+                    {item.email || "-"}
                   </td>
 
                   <td>
-                    {item.propertyType}
+                    {item.purpose ? (
+                      <span
+                        className={
+                          item.purpose === "Sell"
+                            ? "badge bg-success"
+                            : "badge bg-info text-dark"
+                        }
+                      >
+                        {item.purpose}
+                      </span>
+                    ) : (
+                      "-"
+                    )}
                   </td>
 
                   <td>
-                    ₹{item.budget}
+                    {item.category || "-"}
                   </td>
 
+                  <td>
+                    {item.propertyType || "-"}
+                  </td>
 
                   <td>
+                    {item.location || "-"}
+                  </td>
 
+                  <td>
+                    {item.budget !== null &&
+                    item.budget !== undefined &&
+                    item.budget !== "" ? (
+                      `₹${Number(
+                        item.budget
+                      ).toLocaleString("en-IN")}`
+                    ) : (
+                      "-"
+                    )}
+                  </td>
+
+                  <td>
+                    {item.leadSource || "-"}
+                  </td>
+
+                  <td>
+                    {item.followUpDate || "-"}
+                  </td>
+
+                  <td>
                     <span
                       className={
                         item.status === "Converted"
                           ? "badge bg-success"
                           : item.status === "Interested"
                           ? "badge bg-warning text-dark"
+                          : item.status === "Follow-up"
+                          ? "badge bg-info text-dark"
+                          : item.status === "Lost"
+                          ? "badge bg-danger"
                           : "badge bg-primary"
                       }
                     >
                       {item.status || "New"}
                     </span>
-
                   </td>
-
 
                   <td>
 
@@ -856,7 +1046,6 @@ const handleViewEmail = () => {
                         ✏️ Edit
                       </button>
 
-
                       <button
                         className="btn btn-sm btn-danger"
                         onClick={() =>
@@ -865,7 +1054,6 @@ const handleViewEmail = () => {
                       >
                         🗑️ Delete
                       </button>
-
 
                       {item.status !== "Converted" ? (
 
@@ -905,11 +1093,7 @@ const handleViewEmail = () => {
 
       )}
 
-
-      {/* ================================
-          PAGINATION
-      ================================= */}
-
+      {/* PAGINATION */}
       {filteredLeads.length > 0 && (
 
         <div className="d-flex justify-content-between align-items-center mt-4">
@@ -926,11 +1110,9 @@ const handleViewEmail = () => {
             ← Previous
           </button>
 
-
           <span className="fw-semibold">
             Page {currentLeadPage} of {totalLeadPages}
           </span>
-
 
           <button
             className="btn btn-primary"
@@ -951,294 +1133,510 @@ const handleViewEmail = () => {
       )}
 
     </div>
-
   </div>
-
 )}
 
         {/* ===================================================
             LEAD FORM MODULE
             =================================================== */}
 
-        {currentPage === "lead-form" && (
-
-          <div className="card shadow-sm">
-
-            <div className="card-body">
-
-              <div className="d-flex justify-content-between align-items-center mb-4">
-
-                <h3 className="mb-0">
-                  {editingId
-                    ? "✏️ Update Lead"
-                    : "➕ Add New Lead"}
-                </h3>
-
-                <button
-                  className="btn btn-secondary"
-                  onClick={() =>
-                    setCurrentPage("leads")
-                  }
-                >
-                  ← Back to Leads
-                </button>
-
-              </div>
-
-
-              <form onSubmit={handleSubmitLead}>
-
-                <div className="row">
-
-                  <div className="col-md-6 mb-3">
-
-                    <label className="form-label">
-                      Name
-                    </label>
-
-                    <input
-                      className="form-control"
-                      type="text"
-                      name="name"
-                      value={lead.name}
-                      onChange={handleLeadChange}
-                      required
-                    />
-
-                  </div>
-
-
-                  <div className="col-md-6 mb-3">
-
-                    <label className="form-label">
-                      Phone
-                    </label>
-
-                    <input
-                      className="form-control"
-                      type="text"
-                      name="phone"
-                      value={lead.phone}
-                      onChange={handleLeadChange}
-                      required
-                    />
-
-                  </div>
-
-
-                  <div className="col-md-6 mb-3">
-
-                    <label className="form-label">
-                      Email
-                    </label>
-
-                    <input
-                      className="form-control"
-                      type="email"
-                      name="email"
-                      value={lead.email}
-                      onChange={handleLeadChange}
-                    />
-
-                  </div>
-
-
-                  <div className="col-md-6 mb-3">
-
-                    <label className="form-label">
-                      Property Type
-                    </label>
-
-                    <select
-                      className="form-select"
-                      name="propertyType"
-                      value={lead.propertyType}
-                      onChange={handleLeadChange}
-                    >
-
-                      <option value="">
-                        Select
-                      </option>
-
-                      <option value="Flat">
-                        Flat
-                      </option>
-
-                      <option value="House">
-                        House
-                      </option>
-
-                      <option value="Villa">
-                        Villa
-                      </option>
-
-                      <option value="Commercial">
-                        Commercial
-                      </option>
-
-                    </select>
-
-                  </div>
-
-
-                  <div className="col-md-6 mb-3">
-
-                    <label className="form-label">
-                      Budget
-                    </label>
-
-                    <input
-                      className="form-control"
-                      type="number"
-                      name="budget"
-                      value={lead.budget}
-                      onChange={handleLeadChange}
-                    />
-
-                  </div>
-
-
-                  <div className="col-md-6 mb-3">
-
-                    <label className="form-label">
-                      Location
-                    </label>
-
-                    <input
-                      className="form-control"
-                      type="text"
-                      name="location"
-                      value={lead.location}
-                      onChange={handleLeadChange}
-                    />
-
-                  </div>
-
-
-                  <div className="col-md-6 mb-3">
-
-                    <label className="form-label">
-                      Lead Source
-                    </label>
-
-                    <select
-                      className="form-select"
-                      name="leadSource"
-                      value={lead.leadSource}
-                      onChange={handleLeadChange}
-                    >
-
-                      <option value="">
-                        Select
-                      </option>
-
-                      <option value="Website">
-                        Website
-                      </option>
-
-                      <option value="Facebook">
-                        Facebook
-                      </option>
-
-                      <option value="Instagram">
-                      </option>
-
-                      <option value="99acres">
-                        99acres
-                      </option>
-
-                      <option value="Referral">
-                        Referral
-                      </option>
-
-                    </select>
-
-                  </div>
-
-
-                  <div className="col-md-6 mb-3">
-
-                    <label className="form-label">
-                      Status
-                    </label>
-
-                    <select
-                      className="form-select"
-                      name="status"
-                      value={lead.status}
-                      onChange={handleLeadChange}
-                    >
-
-                      <option value="">
-                        Select
-                      </option>
-
-                      <option value="New">
-                        New
-                      </option>
-
-                      <option value="Interested">
-                        Interested
-                      </option>
-
-                      <option value="Converted">
-                        Converted
-                      </option>
-
-                    </select>
-
-                  </div>
-
-
-                  <div className="col-md-6 mb-3">
-
-                    <label className="form-label">
-                      Follow-up Date
-                    </label>
-
-                    <input
-                      className="form-control"
-                      type="date"
-                      name="followUpDate"
-                      value={lead.followUpDate}
-                      onChange={handleLeadChange}
-                    />
-
-                  </div>
-
-                </div>
-
-
-                <div className="mt-3">
-
-                  <button
-                    type="submit"
-                    className="btn btn-success me-2"
-                  >
-                    💾 {editingId
-                      ? "Update Lead"
-                      : "Save Lead"}
-                  </button>
-
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={() =>
-                      setCurrentPage("leads")
-                    }
-                  >
-                    Cancel
-                  </button>
-
-                </div>
-
-              </form>
+      {currentPage === "lead-form" && (
+  <div className="card shadow-sm border-0">
+    <div className="card-body">
+
+      {/* HEADER */}
+      <div className="d-flex justify-content-between align-items-center mb-4">
+
+        <div>
+          <h3 className="fw-bold mb-1">
+            {editingId
+              ? "✏️ Update Lead"
+              : "➕ Add New Lead"}
+          </h3>
+
+          <small className="text-muted">
+            Capture customer enquiry and property requirements
+          </small>
+        </div>
+
+        <button
+          type="button"
+          className="btn btn-secondary"
+          onClick={() => {
+            setLead({
+              ...emptyLead
+            });
+            setEditingId(null);
+            setCurrentPage("leads");
+          }}
+        >
+          ← Back to Leads
+        </button>
+
+      </div>
+
+      <form onSubmit={handleSubmitLead}>
+
+        {/* LEAD INFORMATION */}
+        <h5 className="fw-bold mb-3">
+          👤 Lead Information
+        </h5>
+
+        <div className="row">
+
+          <div className="col-md-6 mb-3">
+            <label className="form-label">
+              Name
+            </label>
+
+            <input
+              type="text"
+              className="form-control"
+              name="name"
+              value={lead.name}
+              onChange={handleLeadChange}
+              required
+            />
+          </div>
+
+          <div className="col-md-6 mb-3">
+            <label className="form-label">
+              Phone
+            </label>
+
+            <input
+              type="text"
+              className="form-control"
+              name="phone"
+              value={lead.phone}
+              onChange={handleLeadChange}
+              required
+            />
+          </div>
+
+          <div className="col-md-6 mb-3">
+            <label className="form-label">
+              Email
+            </label>
+
+            <input
+              type="email"
+              className="form-control"
+              name="email"
+              value={lead.email}
+              onChange={handleLeadChange}
+            />
+          </div>
+
+          <div className="col-md-6 mb-3">
+            <label className="form-label">
+              Enquiry Date & Time
+            </label>
+
+            <input
+              type="datetime-local"
+              className="form-control"
+              name="enquiryDateTime"
+              value={lead.enquiryDateTime}
+              onChange={handleLeadChange}
+            />
+          </div>
+
+        </div>
+
+        <hr />
+
+        {/* PROPERTY REQUIREMENT */}
+        <h5 className="fw-bold mb-3">
+          🏠 Property Requirement
+        </h5>
+
+        <div className="row">
+
+          {/* PURPOSE */}
+          <div className="col-md-6 mb-3">
+            <label className="form-label">
+              Property Purpose
+            </label>
+
+            <select
+              className="form-select"
+              name="purpose"
+              value={lead.purpose}
+              onChange={handleLeadChange}
+            >
+              <option value="">Select</option>
+              <option value="Sell">Sell</option>
+              <option value="Rent">Rent</option>
+            </select>
+          </div>
+
+          {/* CATEGORY */}
+          <div className="col-md-6 mb-3">
+            <label className="form-label">
+              Property Category
+            </label>
+
+            <select
+              className="form-select"
+              name="category"
+              value={lead.category}
+              onChange={(e) => {
+                const value = e.target.value;
+
+                setLead((previous) => ({
+                  ...previous,
+                  category: value,
+                  propertyType: "",
+                  otherPropertyType: "",
+                }));
+              }}
+            >
+              <option value="">Select</option>
+
+              <option value="Residential">
+                Residential
+              </option>
+
+              <option value="Commercial">
+                Commercial
+              </option>
+            </select>
+          </div>
+
+          {/* RESIDENTIAL TYPE */}
+          {lead.category === "Residential" && (
+            <div className="col-md-6 mb-3">
+
+              <label className="form-label">
+                Residential Property Type
+              </label>
+
+              <select
+                className="form-select"
+                name="propertyType"
+                value={lead.propertyType}
+                onChange={handleLeadChange}
+              >
+                <option value="">Select</option>
+                <option value="Flat / Apartment">
+                  Flat / Apartment
+                </option>
+                <option value="Bungalow / House">
+                  Bungalow / House
+                </option>
+                <option value="Villa">
+                  Villa
+                </option>
+                <option value="Builder Floor">
+                  Builder Floor
+                </option>
+                <option value="1 RK / Studio">
+                  1 RK / Studio
+                </option>
+                <option value="Plot">
+                  Plot
+                </option>
+                <option value="Farmhouse">
+                  Farmhouse
+                </option>
+                <option value="Other">
+                  Other
+                </option>
+              </select>
 
             </div>
+          )}
+
+          {/* COMMERCIAL TYPE */}
+          {lead.category === "Commercial" && (
+            <div className="col-md-6 mb-3">
+
+              <label className="form-label">
+                Commercial Property Type
+              </label>
+
+              <select
+                className="form-select"
+                name="propertyType"
+                value={lead.propertyType}
+                onChange={handleLeadChange}
+              >
+                <option value="">Select</option>
+
+                <option value="Shop / Showroom">
+                  Shop / Showroom
+                </option>
+
+                <option value="Hotel / Restaurant">
+                  Hotel / Restaurant
+                </option>
+
+                <option value="Office">
+                  Office
+                </option>
+
+                <option value="Warehouse / Storage">
+                  Warehouse / Storage
+                </option>
+
+                <option value="Industrial">
+                  Industrial
+                </option>
+
+                <option value="Plot">
+                  Plot
+                </option>
+
+                <option value="Other">
+                  Other
+                </option>
+              </select>
+
+            </div>
+          )}
+
+          {/* OTHER PROPERTY TYPE */}
+          {lead.propertyType === "Other" && (
+            <div className="col-md-6 mb-3">
+
+              <label className="form-label">
+                Specify Property Type
+              </label>
+
+              <input
+                type="text"
+                className="form-control"
+                name="otherPropertyType"
+                value={lead.otherPropertyType}
+                onChange={handleLeadChange}
+                placeholder="Enter property type"
+              />
+
+            </div>
+          )}
+
+        </div>
+
+        <hr />
+
+        {/* AREA + BUDGET */}
+        <h5 className="fw-bold mb-3">
+          📐 Area & Budget
+        </h5>
+
+        <div className="row">
+
+          <div className="col-md-4 mb-3">
+            <label className="form-label">
+              Carpet Area (sq.ft)
+            </label>
+
+            <input
+              type="number"
+              className="form-control"
+              name="carpetArea"
+              value={lead.carpetArea}
+              onChange={handleLeadChange}
+            />
+          </div>
+
+          <div className="col-md-4 mb-3">
+            <label className="form-label">
+              Built-up Area (sq.ft)
+            </label>
+
+            <input
+              type="number"
+              className="form-control"
+              name="builtUpArea"
+              value={lead.builtUpArea}
+              onChange={handleLeadChange}
+            />
+          </div>
+
+          <div className="col-md-4 mb-3">
+            <label className="form-label">
+              Super Built-up Area (sq.ft)
+            </label>
+
+            <input
+              type="number"
+              className="form-control"
+              name="superBuiltUpArea"
+              value={lead.superBuiltUpArea}
+              onChange={handleLeadChange}
+            />
+          </div>
+
+          <div className="col-md-6 mb-3">
+            <label className="form-label">
+              Budget
+            </label>
+
+            <input
+              type="number"
+              className="form-control"
+              name="budget"
+              value={lead.budget}
+              onChange={handleLeadChange}
+            />
+          </div>
+
+          <div className="col-md-6 mb-3">
+            <label className="form-label">
+              Location
+            </label>
+
+            <input
+              type="text"
+              className="form-control"
+              name="location"
+              value={lead.location}
+              onChange={handleLeadChange}
+              placeholder="Enter location"
+            />
+          </div>
+
+        </div>
+
+        <hr />
+
+        {/* LEAD TRACKING */}
+        <h5 className="fw-bold mb-3">
+          📌 Lead Tracking
+        </h5>
+
+        <div className="row">
+
+          <div className="col-md-6 mb-3">
+
+            <label className="form-label">
+              Lead Source
+            </label>
+
+            <select
+              className="form-select"
+              name="leadSource"
+              value={lead.leadSource}
+              onChange={handleLeadChange}
+            >
+              <option value="">Select</option>
+              <option value="Website">Website</option>
+              <option value="Facebook">Facebook</option>
+              <option value="Instagram">Instagram</option>
+              <option value="99acres">99acres</option>
+              <option value="Referral">Referral</option>
+              <option value="Walk-in">Walk-in</option>
+              <option value="Other">Other</option>
+            </select>
 
           </div>
-        )}
 
+          <div className="col-md-6 mb-3">
+
+            <label className="form-label">
+              Status
+            </label>
+
+            <select
+              className="form-select"
+              name="status"
+              value={lead.status}
+              onChange={handleLeadChange}
+            >
+              <option value="">Select</option>
+              <option value="New">New</option>
+              <option value="Interested">
+                Interested
+              </option>
+              <option value="Converted">
+                Converted
+              </option>
+              <option value="Lost">
+                Lost
+              </option>
+            </select>
+
+          </div>
+
+          <div className="col-md-6 mb-3">
+
+            <label className="form-label">
+              Follow-up Date
+            </label>
+
+            <input
+              type="date"
+              className="form-control"
+              name="followUpDate"
+              value={lead.followUpDate}
+              onChange={handleLeadChange}
+            />
+
+          </div>
+
+        </div>
+
+        <hr />
+
+        {/* ADDITIONAL INFORMATION */}
+        <h5 className="fw-bold mb-3">
+          📝 Additional Information
+        </h5>
+
+        <div className="mb-3">
+
+          <label className="form-label">
+            Additional Information
+          </label>
+
+          <textarea
+            className="form-control"
+            rows="4"
+            name="additionalInformation"
+            value={lead.additionalInformation}
+            onChange={handleLeadChange}
+            placeholder="Add any additional requirements, preferences or notes..."
+          />
+
+        </div>
+
+        {/* BUTTONS */}
+        <div className="mt-4">
+
+          <button
+            type="submit"
+            className="btn btn-success me-2"
+          >
+            💾{" "}
+            {editingId
+              ? "Update Lead"
+              : "Save Lead"}
+          </button>
+
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => {
+              setLead({
+                ...emptyLead
+              });
+
+              setEditingId(null);
+              setCurrentPage("leads");
+            }}
+          >
+            Cancel
+          </button>
+
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+)}
 {currentPage === "message-templates" && (
   <MessageTemplateList
     onBack={() => setCurrentPage("dashboard")}
@@ -1255,42 +1653,45 @@ const handleViewEmail = () => {
             <CustomerList
               onAddCustomer={handleAddCustomer}
               onEditCustomer={handleEditCustomer}
-              goToDashboard={() => setCurrentPage("dashboard")}
+              onBackToDashboard={() => setCurrentPage("dashboard")}
             />
 
 
           </div>
         )}
 
+      {/* ===================================================
+    CUSTOMER FORM MODULE
+    =================================================== */}
 
-        {/* ===================================================
-            CUSTOMER FORM MODULE
-            =================================================== */}
+{currentPage === "customer-form" && (
+  <div className="card shadow-sm border-0">
+    <div className="card-body">
 
-        {currentPage === "customer-form" && (
+      <AddCustomer
+        editingCustomer={editingCustomer}
+        onSave={handleCustomerSaved}
+        onCancel={handleCustomerCancel}
+      />
 
-          <div>
+      <div className="text-center mt-3">
 
-            <AddCustomer
-              editingCustomer={editingCustomer}
-              onSave={handleCustomerSaved}
-              onCancel={handleCustomerCancel}
-            />
+        <button
+          type="button"
+          className="btn btn-secondary"
+          onClick={() => {
+            setEditingCustomer(null);
+            setCurrentPage("dashboard");
+          }}
+        >
+          ← Back to Dashboard
+        </button>
 
-            <div className="text-center mt-3">
+      </div>
 
-              <button
-                className="btn btn-secondary"
-                onClick={handleCustomerCancel}
-              >
-                ← Back to Customers
-              </button>
-
-            </div>
-
-          </div>
-        )}
-
+    </div>
+  </div>
+)}
 
         {/* ===================================================
             PROPERTY LIST MODULE
@@ -1303,7 +1704,7 @@ const handleViewEmail = () => {
             <PropertyList
               onAddProperty={handleAddProperty}
               onEditProperty={handleEditProperty}
-              goToDashboard={() => setCurrentPage("dashboard")}
+              goToDashboard ={() => setCurrentPage("dashboard")}
             />
 
             <div className="text-center mt-3">
