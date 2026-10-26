@@ -907,6 +907,15 @@ function PropertyList({
 
                             <div className="col-md-6">
 
+<p className="mb-2">
+  <strong>Owner Name:</strong>{" "}
+  {property.ownerName || "-"}
+</p>
+
+<p className="mb-2">
+  <strong>Owner Contact Details:</strong>{" "}
+  {property.ownerContactDetails || "-"}
+</p>
                               <p className="mb-2">
                                 <strong>
                                   Category:
@@ -1029,6 +1038,18 @@ function PropertyList({
                                 {" / sq.ft"}
                               </p>
                             )}
+
+<div className="mb-3">
+  <p className="mb-1">
+    <strong>Owner Name:</strong>{" "}
+    {property.ownerName || "-"}
+  </p>
+
+  <p className="mb-2">
+    <strong>Owner Contact:</strong>{" "}
+    {property.ownerContactDetails || "-"}
+  </p>
+</div>
 
                             <div className="mb-3">
 
