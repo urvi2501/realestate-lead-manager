@@ -53,6 +53,9 @@ const emptyProperty = {
   preLeasedOrPreRented: "",
 
   description: "",
+   // Property owner details
+  ownerName: "",
+  ownerContactDetails: "",
 };
 
 function PropertyForm({ selectedProperty, onSave, onCancel }) {
@@ -272,6 +275,38 @@ return (
        
 <h5 className="mb-3">Property Details</h5>
 
+
+<div className="row">
+  <div className="col-md-6 mb-3">
+    <label className="form-label">
+       Owner Name
+    </label>
+    <input
+      type="text"
+      className="form-control"
+      name="ownerName"
+      value={property.ownerName || ""}
+      onChange={handleChange}
+      placeholder="Enter property owner's name"
+    />
+  </div>
+
+  <div className="col-md-6 mb-3">
+    <label className="form-label">
+      Mobile No
+    </label>
+    <input
+      type="text"
+      className="form-control"
+      name="ownerContactDetails"
+      value={property.ownerContactDetails || ""}
+      onChange={handleChange}
+      placeholder="Enter owner's contact number"
+    />
+  </div>
+</div>
+
+<hr className="mb-4" />
 <div className="row">
   {/* Purpose */}
   <div className="col-md-6 mb-3">

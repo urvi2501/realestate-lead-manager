@@ -354,6 +354,8 @@ function PropertyList({
       "Office Type",
       "Meeting Rooms",
       "Description",
+       "Owner Name",
+      "Owner Contact Details",
     ];
 
     const rows = filteredProperties.map(
@@ -384,6 +386,8 @@ function PropertyList({
         property.officeType ?? "",
         property.meetingRooms ?? "",
         property.description ?? "",
+                property.ownerName ?? "",
+        property.ownerContactDetails ?? "",
       ]
     );
 
