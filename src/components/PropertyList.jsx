@@ -907,15 +907,6 @@ function PropertyList({
 
                             <div className="col-md-6">
 
-<p className="mb-2">
-  <strong>Owner Name:</strong>{" "}
-  {property.ownerName || "-"}
-</p>
-
-<p className="mb-2">
-  <strong>Owner Contact Details:</strong>{" "}
-  {property.ownerContactDetails || "-"}
-</p>
                               <p className="mb-2">
                                 <strong>
                                   Category:
